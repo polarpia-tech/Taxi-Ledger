@@ -21,7 +21,7 @@ let expenses = [];
 
 function n(v){
   if (v === "" || v == null) return 0;
-  const s = String(v).replace(",", ".");
+  const s = String(v).replace(",", "."); // για κόμμα
   const num = Number(s);
   return Number.isFinite(num) ? num : 0;
 }
@@ -38,7 +38,7 @@ function calc(){
   const r = n(revenueEl.value);
   const t1 = n(tip1El.value);
   const t2 = n(tip2El.value);
-  const exp = expenses.reduce((a,e)=>a + n(e.amount), 0);
+  const exp = expenses.reduce((a,e)=> a + n(e.amount), 0);
 
   const gross = r + t1 + t2;
   const net = gross - exp;
@@ -70,6 +70,10 @@ function renderExpenses(){
     a.placeholder = "€";
     a.value = e.amount ?? "";
     a.addEventListener("input", ()=> { e.amount = a.value; calc(); });
+    a.addEventListener("change", ()=> { e.amount = a.value; calc(); });
+    a.addEventListener("keydown", (ev)=>{
+      if (ev.key === "Enter") a.blur(); // κλείσε πληκτρολόγιο
+    });
 
     const d = document.createElement("button");
     d.className = "btn danger";
@@ -115,7 +119,6 @@ async function renderHistory(){
     item.style.display = "flex";
     item.style.justifyContent = "space-between";
     item.style.gap = "12px";
-    item.style.alignItems = "flex-start";
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
@@ -139,16 +142,16 @@ async function renderHistory(){
     item.append(left, net);
 
     item.addEventListener("click", async ()=>{
-      // Load day into form
       dateInput.value = d.date;
       revenueEl.value = d.revenue ?? "";
       tip1El.value = d.tip1 ?? "";
       tip2El.value = d.tip2 ?? "";
       noteEl.value = d.note ?? "";
-      expenses = Array.isArray(d.expenses) ? d.expenses.map(x=>({label:x.label||"", amount:(x.amount??"").toString()})) : [];
+      expenses = Array.isArray(d.expenses)
+        ? d.expenses.map(x=>({label:x.label||"", amount:(x.amount??"").toString()}))
+        : [];
       renderExpenses();
 
-      // Go to entry tab
       document.querySelector('.tab[data-tab="entry"]').click();
     });
 
@@ -158,8 +161,8 @@ async function renderHistory(){
 
 async function renderSummary(){
   const all = await TaxiDB.getAllDays();
-
   let t={r:0,t1:0,t2:0,e:0,net:0};
+
   all.forEach(d=>{
     t.r += d.revenue || 0;
     t.t1 += d.tip1 || 0;
@@ -183,7 +186,9 @@ $("saveBtn").addEventListener("click", async ()=>{
     revenue: n(revenueEl.value),
     tip1: n(tip1El.value),
     tip2: n(tip2El.value),
-    expenses: expenses.map(e=>({label:(e.label||"").trim(), amount:n(e.amount)})).filter(e=>e.label || e.amount),
+    expenses: expenses
+      .map(e=>({label:(e.label||"").trim(), amount:n(e.amount)}))
+      .filter(e=>e.label || e.amount),
     expensesTotal: n(expensesTotalEl.value),
     gross: n(revenueEl.value)+n(tip1El.value)+n(tip2El.value),
     net: (n(revenueEl.value)+n(tip1El.value)+n(tip2El.value)) - n(expensesTotalEl.value),
@@ -197,9 +202,22 @@ $("saveBtn").addEventListener("click", async ()=>{
   await renderSummary();
 });
 
-function bindLiveCalc(){
-  [revenueEl, tip1El, tip2El].forEach(el => el.addEventListener("input", calc));
+/* ✅ Live calc + ENTER κλείνει πληκτρολόγιο */
+function bindMoneyInput(el){
+  const handler = () => calc();
+
+  el.addEventListener("input", handler);
+  el.addEventListener("change", handler);
+  el.addEventListener("keyup", handler);
+
+  el.addEventListener("keydown", (ev)=>{
+    if (ev.key === "Enter") el.blur(); // κλείσε πληκτρολόγιο
+  });
 }
+
+bindMoneyInput(revenueEl);
+bindMoneyInput(tip1El);
+bindMoneyInput(tip2El);
 
 document.querySelectorAll(".tab").forEach(t=>{
   t.addEventListener("click", async ()=>{
@@ -216,7 +234,6 @@ document.querySelectorAll(".tab").forEach(t=>{
 });
 
 dateInput.value = today();
-bindLiveCalc();
 renderExpenses();
 calc();
 renderHistory();
