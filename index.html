@@ -14,53 +14,97 @@
       --card:rgba(255,255,255,.06);
       --line:rgba(255,255,255,.12);
       --text:#eaf1ff; --muted:rgba(234,241,255,.65);
-      --good:rgba(48,209,88,.95);
-      --bad:rgba(255,69,58,.95);
-      --accent:rgba(10,132,255,.95);
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 18px;
     }
+
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-
-      /* ΟΜΑΛΟ BACKGROUND */
       background:
         radial-gradient(900px 600px at 15% -10%, rgba(10,132,255,.14), transparent 55%),
         radial-gradient(800px 520px at 85% 0%, rgba(48,209,88,.10), transparent 60%),
         radial-gradient(700px 500px at 50% 110%, rgba(255,214,10,.06), transparent 55%),
         linear-gradient(180deg, #070a0f 0%, #0b0f14 55%, #070a0f 100%);
       background-attachment: fixed;
+      overflow-x:hidden; /* ΣΗΜΑΝΤΙΚΟ: κόβει το οριζόντιο σκρολ αν κάτι ξεφύγει */
     }
 
-    .app{max-width:520px;margin:0 auto;padding:16px 14px 90px;}
-    header{display:flex;justify-content:space-between;align-items:center}
+    /* ασφαλής ζώνη + σταθερό πλάτος */
+    .app{
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 14px calc(92px + env(safe-area-inset-bottom));
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      padding: 4px 2px 8px;
+    }
     h1{margin:0;font-size:18px}
     small{color:var(--muted)}
 
-    .pill{border:1px solid var(--line);border-radius:999px;padding:8px 12px}
-    .pill input{background:none;border:none;color:var(--text)}
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding: 8px 12px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .pill input{
+      background:none;border:none;color:var(--text);
+      width: 140px;
+      min-width: 0;
+    }
 
     .card{
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:14px;margin-top:12px
+      padding:14px;
+      margin-top:12px;
+      max-width:100%;
     }
 
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+    /* ✅ FIX: min-width:0 ώστε να μην “σπρώχνει” έξω από την οθόνη */
+    .grid{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap:10px;
+      width: 100%;
+    }
+
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 0;
+    }
 
     .field{
       border:1px solid var(--line);
       background:rgba(255,255,255,.03);
       border-radius:14px;
       padding:11px 12px;
-      color:var(--text)
+      color:var(--text);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      outline: none;
     }
+    textarea.field{ resize:none; }
 
     .btn{
       border:1px solid rgba(255,255,255,.14);
@@ -68,7 +112,9 @@
       padding:12px 14px;
       border-radius:14px;
       box-shadow:0 10px 25px rgba(0,0,0,.22);
-      color:var(--text)
+      color:var(--text);
+      cursor:pointer;
+      width: 100%;
     }
     .btn.primary{
       background:rgba(10,132,255,.22);
@@ -77,10 +123,20 @@
     }
     .btn.danger{background:rgba(255,69,58,.14)}
 
-    .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kpi{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10)}
+    .summary{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap:10px;
+    }
+    .kpi{
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.10);
+      min-width:0;
+    }
     .kpi .k{font-size:12px;color:var(--muted)}
-    .kpi .v{font-size:18px;font-weight:700}
+    .kpi .v{font-size:18px;font-weight:700; word-break: break-word;}
 
     .bigTotals{
       display:flex;flex-direction:column;gap:10px;
@@ -88,22 +144,56 @@
       background:rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.10);
     }
-    .bigLine{display:flex;justify-content:space-between;align-items:flex-end}
-    .bigLine .k{color:var(--muted);font-size:12px}
-    .bigLine .v{font-size:20px;font-weight:800}
-
-    .tabs{
-      position:fixed;left:0;right:0;bottom:0;
-      padding:10px;background:rgba(8,11,16,.85);
-      border-top:1px solid rgba(255,255,255,.1)
+    .bigLine{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap: 12px;
     }
-    .tabs .bar{max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    .tab{padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.1);text-align:center}
-    .tab.active{background:rgba(10,132,255,.2)}
+    .bigLine .k{color:var(--muted);font-size:12px}
+    .bigLine .v{font-size:20px;font-weight:800; text-align:right; white-space:nowrap;}
 
     .hr{height:1px;background:rgba(255,255,255,.1);margin:12px 0}
 
-    .expense-item{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px}
+    /* Expenses */
+    .expense-item{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) 120px 52px;
+      gap:8px;
+      margin-top:10px;
+      width:100%;
+      max-width:100%;
+    }
+    .expense-item .btn{width:52px; padding: 12px 0;}
+    .expense-item input{min-width:0;}
+
+    /* Tabs bottom */
+    .tabs{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      background:rgba(8,11,16,.85);
+      border-top:1px solid rgba(255,255,255,.1);
+      backdrop-filter: blur(14px);
+    }
+    .tabs .bar{
+      max-width:520px;margin:0 auto;
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;
+    }
+    .tab{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.1);
+      text-align:center;
+      user-select:none;
+    }
+    .tab.active{background:rgba(10,132,255,.2)}
+
+    /* ✅ Mobile: κάνε το grid μονή στήλη */
+    @media (max-width: 420px){
+      .grid{ grid-template-columns: minmax(0,1fr); }
+      .summary{ grid-template-columns: minmax(0,1fr); }
+      .pill input{ width: 130px; }
+      .expense-item{ grid-template-columns: minmax(0,1fr) 120px 52px; }
+    }
   </style>
 </head>
 
@@ -111,23 +201,37 @@
 <div class="app">
 
 <header>
-  <div>
+  <div style="min-width:0">
     <h1>Taxi Ledger</h1>
     <small>Τζίρος • Μπουρμπουάρ • Έξοδα</small>
   </div>
+
   <div class="pill">
-    📅 <input id="dateInput" type="date">
+    <span>📅</span>
+    <input id="dateInput" type="date" />
   </div>
 </header>
 
 <!-- ENTRY -->
 <section id="view-entry">
   <div class="card">
+
     <div class="grid">
-      <label>Τζίρος (€)<input id="revenue" class="field"></label>
-      <label>Μπουρμπουάρ 1 (€)<input id="tip1" class="field"></label>
-      <label>Μπουρμπουάρ 2 (€)<input id="tip2" class="field"></label>
-      <label>Σύνολο εξόδων (€)<input id="expensesTotal" class="field" disabled></label>
+      <label>Τζίρος (€)
+        <input id="revenue" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
+      </label>
+
+      <label>Μπουρμπουάρ 1 (€)
+        <input id="tip1" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
+      </label>
+
+      <label>Μπουρμπουάρ 2 (€)
+        <input id="tip2" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
+      </label>
+
+      <label>Σύνολο εξόδων (€)
+        <input id="expensesTotal" class="field" inputmode="decimal" placeholder="0.00" disabled />
+      </label>
     </div>
 
     <div class="hr"></div>
@@ -137,7 +241,9 @@
 
     <div class="hr"></div>
 
-    <label>Σημειώσεις<textarea id="note" class="field"></textarea></label>
+    <label>Σημειώσεις
+      <textarea id="note" class="field" rows="2" placeholder="π.χ. καύσιμα, βροχή, αεροδρόμιο..."></textarea>
+    </label>
 
     <div class="hr"></div>
 
@@ -154,7 +260,7 @@
 <!-- HISTORY -->
 <section id="view-history" style="display:none">
   <div class="card">
-    <div id="historyList"></div>
+    <div id="historyList" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </section>
 
@@ -162,7 +268,6 @@
 <section id="view-summary" style="display:none">
   <div class="card">
 
-    <!-- ΞΕΧΩΡΙΣΤΑ ΣΥΝΟΛΑ -->
     <div class="summary">
       <div class="kpi"><div class="k">Ημέρες</div><div id="sumDays" class="v">0</div></div>
       <div class="kpi"><div class="k">Τζίρος</div><div id="sumRevenue" class="v">€0</div></div>
@@ -173,7 +278,6 @@
 
     <div class="hr"></div>
 
-    <!-- ΣΥΝΟΛΙΚΑ ΟΛΑ ΜΑΖΙ -->
     <div class="bigTotals">
       <div class="bigLine">
         <div class="k">Όλα μαζί (Τζίρος + Μπουρμπουάρ)</div>
@@ -201,9 +305,9 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
-if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js");
-}
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js");
+  }
 </script>
 </body>
 </html>
