@@ -1,4 +1,4 @@
-const CACHE="taxi-ledger-v5";
+const CACHE="taxi-ledger-v5.5";
 const ASSETS=["./","index.html","app.js","db.js","manifest.webmanifest"];
 
 self.addEventListener("install",e=>{
