@@ -1,40 +1,13 @@
-const CACHE = "taxi-ledger-v1";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./app.js",
-  "./db.js",
-  "./manifest.webmanifest"
-];
+const CACHE="taxi-ledger-v2";
+const ASSETS=["./","index.html","app.js","db.js","manifest.webmanifest"];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await cache.addAll(ASSETS);
-    self.skipWaiting();
-  })());
+self.addEventListener("install",e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+  self.skipWaiting();
 });
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => (k !== CACHE ? caches.delete(k) : null)));
-    self.clients.claim();
-  })());
+self.addEventListener("activate",e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>k!==CACHE&&caches.delete(k)))));
 });
-
-self.addEventListener("fetch", (e) => {
-  e.respondWith((async () => {
-    const cached = await caches.match(e.request);
-    if (cached) return cached;
-
-    try {
-      const fresh = await fetch(e.request);
-      const cache = await caches.open(CACHE);
-      cache.put(e.request, fresh.clone());
-      return fresh;
-    } catch {
-      return cached || new Response("Offline", { status: 503 });
-    }
-  })());
+self.addEventListener("fetch",e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
 });
