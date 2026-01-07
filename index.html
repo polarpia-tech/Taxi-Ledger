@@ -7,8 +7,6 @@
   <title>Taxi Ledger</title>
 
   <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <style>
     :root{
@@ -23,391 +21,189 @@
       --radius: 18px;
     }
     *{ box-sizing:border-box; }
-    html,body{ height:100%; }
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(10,132,255,.16), transparent 45%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(48,209,88,.10), transparent 45%),
-                  linear-gradient(180deg, var(--bg0), var(--bg1));
       color: var(--text);
+
+      /* ΟΜΑΛΟ BACKGROUND */
+      background:
+        radial-gradient(900px 600px at 15% -10%, rgba(10,132,255,.14), transparent 55%),
+        radial-gradient(800px 520px at 85% 0%, rgba(48,209,88,.10), transparent 60%),
+        radial-gradient(700px 500px at 50% 110%, rgba(255,214,10,.06), transparent 55%),
+        linear-gradient(180deg, #070a0f 0%, #0b0f14 55%, #070a0f 100%);
+      background-attachment: fixed;
     }
-    .app{
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 16px 14px 84px; /* bottom space for tabs */
-    }
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 10px 6px 6px;
-    }
-    .title{
-      display:flex; flex-direction:column;
-      line-height:1.1;
-    }
-    .title h1{
-      margin:0;
-      font-size: 18px;
-      letter-spacing:.2px;
-    }
-    .title small{
-      color: var(--muted);
-      font-size: 12px;
-      margin-top:4px;
-    }
-    .pill{
-      display:flex; align-items:center; gap:8px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255,255,255,.04);
-      box-shadow: var(--shadow);
-    }
-    .pill input{
-      background:transparent;
-      border:none;
-      color:var(--text);
-      font-size: 14px;
-      outline:none;
-      width: 132px;
-    }
+
+    .app{max-width:520px;margin:0 auto;padding:16px 14px 90px;}
+    header{display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:18px}
+    small{color:var(--muted)}
+
+    .pill{border:1px solid var(--line);border-radius:999px;padding:8px 12px}
+    .pill input{background:none;border:none;color:var(--text)}
+
     .card{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      margin-top: 12px;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;margin-top:12px
     }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    label{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    input, button, select, textarea{
-      font: inherit;
-      color: var(--text);
-    }
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+
     .field{
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      border-radius: 14px;
-      padding: 11px 12px;
-      outline:none;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:14px;
+      padding:11px 12px;
+      color:var(--text)
     }
-    .field:focus{
-      border-color: rgba(10,132,255,.65);
-      box-shadow: 0 0 0 4px rgba(10,132,255,.12);
-    }
-    .row{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .row > *{ flex:1; }
+
     .btn{
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      padding: 12px 14px;
-      border-radius: 14px;
-      cursor:pointer;
-      transition: transform .04s ease, background .15s ease;
-      user-select:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      padding:12px 14px;
+      border-radius:14px;
+      box-shadow:0 10px 25px rgba(0,0,0,.22);
+      color:var(--text)
     }
-    .btn:active{ transform: translateY(1px) scale(.995); }
     .btn.primary{
-      background: rgba(10,132,255,.22);
-      border-color: rgba(10,132,255,.40);
+      background:rgba(10,132,255,.22);
+      border-color:rgba(10,132,255,.40);
+      box-shadow:0 12px 30px rgba(10,132,255,.12);
     }
-    .btn.danger{
-      background: rgba(255,69,58,.14);
-      border-color: rgba(255,69,58,.30);
-    }
-    .btn.ghost{
-      background: transparent;
-      border-color: rgba(255,255,255,.10);
-    }
-    .summary{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .kpi{
-      padding: 12px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    .kpi .k{ font-size:12px; color:var(--muted); }
-    .kpi .v{ margin-top:6px; font-size: 18px; font-weight: 700; letter-spacing:.2px; }
-    .v.good{ color: rgba(48,209,88,.98); }
-    .v.bad{ color: rgba(255,69,58,.98); }
+    .btn.danger{background:rgba(255,69,58,.14)}
 
-    /* Expenses list */
-    .expense-item{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr auto;
-      gap: 8px;
-      align-items:center;
-      margin-top: 8px;
-    }
-    .chip{
-      display:inline-flex;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      font-size: 12px;
-      color: var(--muted);
-      gap:6px;
-      align-items:center;
-    }
-    .muted{ color: var(--muted); }
-    .list{
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
-    .day{
-      padding: 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      display:flex;
-      justify-content:space-between;
-      gap: 12px;
-      align-items:flex-start;
-    }
-    .day .left{ display:flex; flex-direction:column; gap:6px; }
-    .day .date{ font-weight: 700; }
-    .day .meta{ display:flex; gap:8px; flex-wrap:wrap; }
-    .day .right{
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap: 8px;
-      min-width: 110px;
-    }
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10)}
+    .kpi .k{font-size:12px;color:var(--muted)}
+    .kpi .v{font-size:18px;font-weight:700}
 
-    /* Tabs bottom */
+    .bigTotals{
+      display:flex;flex-direction:column;gap:10px;
+      padding:12px;border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .bigLine{display:flex;justify-content:space-between;align-items:flex-end}
+    .bigLine .k{color:var(--muted);font-size:12px}
+    .bigLine .v{font-size:20px;font-weight:800}
+
     .tabs{
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(8,11,16,.82);
-      backdrop-filter: blur(14px);
-      border-top: 1px solid rgba(255,255,255,.10);
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px;background:rgba(8,11,16,.85);
+      border-top:1px solid rgba(255,255,255,.1)
     }
-    .tabs .bar{
-      max-width: 520px;
-      margin: 0 auto;
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-    .tab{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      justify-content:center;
-      padding: 12px 10px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      cursor:pointer;
-      user-select:none;
-    }
-    .tab.active{
-      background: rgba(10,132,255,.18);
-      border-color: rgba(10,132,255,.38);
-    }
+    .tabs .bar{max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .tab{padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.1);text-align:center}
+    .tab.active{background:rgba(10,132,255,.2)}
 
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: 84px;
-      transform: translateX(-50%);
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.65);
-      border: 1px solid rgba(255,255,255,.14);
-      color: var(--text);
-      font-size: 13px;
-      opacity: 0;
-      pointer-events:none;
-      transition: opacity .2s ease, transform .2s ease;
-    }
-    .toast.show{
-      opacity: 1;
-      transform: translateX(-50%) translateY(-6px);
-    }
-    .hr{
-      height:1px;
-      background: rgba(255,255,255,.10);
-      margin: 12px 0;
-      border-radius: 99px;
-    }
+    .hr{height:1px;background:rgba(255,255,255,.1);margin:12px 0}
 
-    @media (max-width: 420px){
-      .grid{ grid-template-columns: 1fr; }
-      .summary{ grid-template-columns: 1fr; }
-      .expense-item{ grid-template-columns: 1fr 1fr auto; }
-      .pill input{ width: 120px; }
-    }
+    .expense-item{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px}
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <header>
-      <div class="title">
-        <h1>Taxi Ledger</h1>
-        <small class="muted">Τζίρος • Μπουρμπουάρ • Έξοδα (offline)</small>
-      </div>
+<div class="app">
 
-      <div class="pill" title="Ημερομηνία καταχώρησης">
-        <span style="opacity:.85">📅</span>
-        <input id="dateInput" type="date" />
-      </div>
-    </header>
-
-    <!-- TAB: Entry -->
-    <section id="view-entry">
-      <div class="card">
-        <div class="grid">
-          <label>Τζίρος ημέρας (€)
-            <input id="revenue" class="field" inputmode="decimal" placeholder="π.χ. 220" />
-          </label>
-
-          <label>Μπουρμπουάρ 1 (€)
-            <input id="tip1" class="field" inputmode="decimal" placeholder="π.χ. 15" />
-          </label>
-
-          <label>Μπουρμπουάρ 2 (€)
-            <input id="tip2" class="field" inputmode="decimal" placeholder="π.χ. 5" />
-          </label>
-
-          <label>Σύνολο εξόδων (€)
-            <input id="expensesTotal" class="field" inputmode="decimal" placeholder="auto" disabled />
-          </label>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="row" style="margin-bottom:8px;">
-          <div class="chip">🧾 Αναλυτικά έξοδα</div>
-          <button id="addExpenseBtn" class="btn">+ Προσθήκη</button>
-        </div>
-
-        <div id="expensesList"></div>
-
-        <div class="hr"></div>
-
-        <label>Σημειώσεις
-          <textarea id="note" class="field" rows="2" placeholder="π.χ. Βροχή, αεροδρόμιο, νυχτερινό..."></textarea>
-        </label>
-
-        <div class="hr"></div>
-
-        <div class="summary">
-          <div class="kpi">
-            <div class="k">Σύνολο Ημέρας</div>
-            <div id="grossKpi" class="v">€0.00</div>
-          </div>
-          <div class="kpi">
-            <div class="k">Καθαρό</div>
-            <div id="netKpi" class="v">€0.00</div>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="row">
-          <button id="saveBtn" class="btn primary">💾 Αποθήκευση</button>
-          <button id="resetBtn" class="btn ghost">↩️ Καθαρισμός</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: History -->
-    <section id="view-history" style="display:none;">
-      <div class="card">
-        <div class="row">
-          <label style="flex:1;">Αναζήτηση (ημερομηνία/σημείωση)
-            <input id="searchInput" class="field" placeholder="π.χ. 2026-01 ή αεροδρόμιο" />
-          </label>
-        </div>
-        <div class="hr"></div>
-        <div id="historyList" class="list"></div>
-        <div id="historyEmpty" class="muted" style="display:none; padding: 8px 2px;">
-          Δεν υπάρχουν καταχωρήσεις ακόμα.
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: Summary -->
-    <section id="view-summary" style="display:none;">
-      <div class="card">
-        <div class="row">
-          <label>Περίοδος
-            <select id="periodSelect" class="field">
-              <option value="week">Τρέχουσα εβδομάδα</option>
-              <option value="month" selected>Τρέχων μήνας</option>
-              <option value="year">Τρέχον έτος</option>
-              <option value="all">Όλα</option>
-            </select>
-          </label>
-          <label>Έως (ημερομηνία)
-            <input id="summaryUntil" class="field" type="date" />
-          </label>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="summary">
-          <div class="kpi"><div class="k">Τζίρος</div><div id="sumRevenue" class="v">€0.00</div></div>
-          <div class="kpi"><div class="k">Μπουρμπουάρ 1</div><div id="sumTip1" class="v">€0.00</div></div>
-          <div class="kpi"><div class="k">Μπουρμπουάρ 2</div><div id="sumTip2" class="v">€0.00</div></div>
-          <div class="kpi"><div class="k">Έξοδα</div><div id="sumExpenses" class="v">€0.00</div></div>
-          <div class="kpi"><div class="k">Σύνολο</div><div id="sumGross" class="v">€0.00</div></div>
-          <div class="kpi"><div class="k">Καθαρό</div><div id="sumNet" class="v">€0.00</div></div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="muted" id="sumMeta">—</div>
-      </div>
-    </section>
+<header>
+  <div>
+    <h1>Taxi Ledger</h1>
+    <small>Τζίρος • Μπουρμπουάρ • Έξοδα</small>
   </div>
+  <div class="pill">
+    📅 <input id="dateInput" type="date">
+  </div>
+</header>
 
-  <div class="tabs">
-    <div class="bar">
-      <div class="tab active" data-tab="entry">➕ Καταχώρηση</div>
-      <div class="tab" data-tab="history">📚 Ιστορικό</div>
-      <div class="tab" data-tab="summary">📊 Σύνοψη</div>
+<!-- ENTRY -->
+<section id="view-entry">
+  <div class="card">
+    <div class="grid">
+      <label>Τζίρος (€)<input id="revenue" class="field"></label>
+      <label>Μπουρμπουάρ 1 (€)<input id="tip1" class="field"></label>
+      <label>Μπουρμπουάρ 2 (€)<input id="tip2" class="field"></label>
+      <label>Σύνολο εξόδων (€)<input id="expensesTotal" class="field" disabled></label>
     </div>
+
+    <div class="hr"></div>
+
+    <button id="addExpenseBtn" class="btn">+ Προσθήκη εξόδου</button>
+    <div id="expensesList"></div>
+
+    <div class="hr"></div>
+
+    <label>Σημειώσεις<textarea id="note" class="field"></textarea></label>
+
+    <div class="hr"></div>
+
+    <div class="summary">
+      <div class="kpi"><div class="k">Σύνολο</div><div id="grossKpi" class="v">€0</div></div>
+      <div class="kpi"><div class="k">Καθαρό</div><div id="netKpi" class="v">€0</div></div>
+    </div>
+
+    <div class="hr"></div>
+    <button id="saveBtn" class="btn primary">💾 Αποθήκευση</button>
   </div>
+</section>
 
-  <div id="toast" class="toast">OK</div>
+<!-- HISTORY -->
+<section id="view-history" style="display:none">
+  <div class="card">
+    <div id="historyList"></div>
+  </div>
+</section>
 
-  <script src="./db.js"></script>
-  <script src="./app.js"></script>
+<!-- SUMMARY -->
+<section id="view-summary" style="display:none">
+  <div class="card">
 
-  <script>
-    // Service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js").catch(()=>{});
-    }
-  </script>
+    <!-- ΞΕΧΩΡΙΣΤΑ ΣΥΝΟΛΑ -->
+    <div class="summary">
+      <div class="kpi"><div class="k">Ημέρες</div><div id="sumDays" class="v">0</div></div>
+      <div class="kpi"><div class="k">Τζίρος</div><div id="sumRevenue" class="v">€0</div></div>
+      <div class="kpi"><div class="k">Μπουρμπουάρ 1</div><div id="sumTip1" class="v">€0</div></div>
+      <div class="kpi"><div class="k">Μπουρμπουάρ 2</div><div id="sumTip2" class="v">€0</div></div>
+      <div class="kpi"><div class="k">Έξοδα</div><div id="sumExpenses" class="v">€0</div></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <!-- ΣΥΝΟΛΙΚΑ ΟΛΑ ΜΑΖΙ -->
+    <div class="bigTotals">
+      <div class="bigLine">
+        <div class="k">Όλα μαζί (Τζίρος + Μπουρμπουάρ)</div>
+        <div id="sumAllIn" class="v">€0</div>
+      </div>
+      <div class="bigLine">
+        <div class="k">Καθαρό μετά τα έξοδα</div>
+        <div id="sumNet" class="v">€0</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</div>
+
+<div class="tabs">
+  <div class="bar">
+    <div class="tab active" data-tab="entry">➕</div>
+    <div class="tab" data-tab="history">📚</div>
+    <div class="tab" data-tab="summary">📊</div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
 </body>
 </html>
