@@ -1,4 +1,4 @@
-const CACHE="taxi-ledger-v20";
+const CACHE="taxi-ledger-v30";
 const ASSETS=["./","index.html","app.js","db.js","driveSync.js","manifest.webmanifest"];
 
 self.addEventListener("install",e=>{
