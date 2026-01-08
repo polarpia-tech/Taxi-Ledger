@@ -1,5 +1,5 @@
-const CACHE="taxi-ledger-v5.5";
-const ASSETS=["./","index.html","app.js","db.js","manifest.webmanifest"];
+const CACHE="taxi-ledger-v20";
+const ASSETS=["./","index.html","app.js","db.js","driveSync.js","manifest.webmanifest"];
 
 self.addEventListener("install",e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
