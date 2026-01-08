@@ -31,4 +31,4 @@ async function deleteDay(date){
   tx.objectStore(STORE).delete(date);
 }
 
-window.TaxiDB={putDay,getAllDays,deleteDay};
+window.TaxiDB={putDay,getAllDays,deleteDay}; 
