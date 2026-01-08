@@ -1,6 +1,3 @@
-<!-- ΜΟΝΟ ΑΛΛΑΓΕΣ ΣΤΟ SUMMARY SECTION + labels -->
-<!-- Αν έχεις ήδη το τελευταίο index.html, απλά αντικατέστησε ΟΛΟ το αρχείο με αυτό για να μη ψάχνεις -->
-
 <!doctype html>
 <html lang="el">
 <head>
@@ -9,43 +6,166 @@
   <meta name="theme-color" content="#0b0f14" />
   <title>Taxi Ledger</title>
   <link rel="manifest" href="./manifest.webmanifest" />
+
   <style>
-    :root{--bg0:#070a0f;--bg1:#0b0f14;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12);--text:#eaf1ff;--muted:rgba(234,241,255,.65);--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px;}
-    *{box-sizing:border-box;} html,body{height:100%;}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
-      background:radial-gradient(900px 600px at 15% -10%, rgba(10,132,255,.14), transparent 55%),
-      radial-gradient(800px 520px at 85% 0%, rgba(48,209,88,.10), transparent 60%),
-      radial-gradient(700px 500px at 50% 110%, rgba(255,214,10,.06), transparent 55%),
-      linear-gradient(180deg,#070a0f 0%,#0b0f14 55%,#070a0f 100%);
-      background-attachment:fixed;overflow-x:hidden;}
-    .app{max-width:520px;margin:0 auto;padding:16px 14px calc(92px + env(safe-area-inset-bottom));}
-    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 2px 8px;}
-    h1{margin:0;font-size:18px} small{color:var(--muted)}
-    .pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;min-width:0;max-width:100%;}
-    .pill input{background:none;border:none;color:var(--text);width:140px;min-width:0;}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-top:12px;max-width:100%;}
-    .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;width:100%;}
-    label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px;min-width:0;}
-    .field{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:14px;padding:11px 12px;color:var(--text);width:100%;max-width:100%;min-width:0;outline:none;}
-    textarea.field{resize:none;}
-    .btn{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);padding:12px 14px;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,.22);color:var(--text);cursor:pointer;width:100%;}
-    .btn.primary{background:rgba(10,132,255,.22);border-color:rgba(10,132,255,.40);box-shadow:0 12px 30px rgba(10,132,255,.12);}
-    .btn.danger{background:rgba(255,69,58,.14)} .btn.rowbtn{width:auto;flex:1;}
-    .summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;}
-    .kpi{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);min-width:0;}
-    .kpi .k{font-size:12px;color:var(--muted)} .kpi .v{font-size:18px;font-weight:900;word-break:break-word;}
-    .bigTotals{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);}
+    :root{
+      --bg0:#070a0f; --bg1:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.12);
+      --text:#eaf1ff; --muted:rgba(234,241,255,.65);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 600px at 15% -10%, rgba(10,132,255,.14), transparent 55%),
+        radial-gradient(800px 520px at 85% 0%, rgba(48,209,88,.10), transparent 60%),
+        radial-gradient(700px 500px at 50% 110%, rgba(255,214,10,.06), transparent 55%),
+        linear-gradient(180deg, #070a0f 0%, #0b0f14 55%, #070a0f 100%);
+      background-attachment: fixed;
+      overflow-x:hidden;
+    }
+    .app{
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 14px calc(92px + env(safe-area-inset-bottom));
+    }
+    header{
+      display:flex;justify-content:space-between;align-items:center;gap: 12px;
+      padding: 4px 2px 8px;
+    }
+    h1{margin:0;font-size:18px}
+    small{color:var(--muted)}
+    .pill{
+      display:flex;align-items:center;gap:8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding: 8px 12px;
+      min-width: 0; max-width: 100%;
+    }
+    .pill input{
+      background:none;border:none;color:var(--text);
+      width: 140px; min-width: 0;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+      margin-top:12px;
+      max-width:100%;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap:10px;
+      width: 100%;
+    }
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 0;
+    }
+    .field{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      border-radius:14px;
+      padding:11px 12px;
+      color:var(--text);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      outline: none;
+    }
+    textarea.field{ resize:none; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      padding:12px 14px;
+      border-radius:14px;
+      box-shadow:0 10px 25px rgba(0,0,0,.22);
+      color:var(--text);
+      cursor:pointer;
+      width: 100%;
+    }
+    .btn.primary{
+      background:rgba(10,132,255,.22);
+      border-color:rgba(10,132,255,.40);
+      box-shadow:0 12px 30px rgba(10,132,255,.12);
+    }
+    .btn.danger{background:rgba(255,69,58,.14)}
+    .btn.small{ padding:10px 12px; }
+    .summary{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+      gap:10px;
+    }
+    .kpi{
+      padding:12px;border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.10);
+      min-width:0;
+    }
+    .kpi .k{font-size:12px;color:var(--muted)}
+    .kpi .v{font-size:18px;font-weight:900; word-break: break-word;}
+    .bigTotals{
+      display:flex;flex-direction:column;gap:10px;
+      padding:12px;border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.10);
+    }
     .bigLine{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;}
-    .bigLine .k{color:var(--muted);font-size:12px} .bigLine .v{font-size:20px;font-weight:900;text-align:right;white-space:nowrap;}
+    .bigLine .k{color:var(--muted);font-size:12px}
+    .bigLine .v{font-size:20px;font-weight:900;text-align:right;white-space:nowrap;}
     .hr{height:1px;background:rgba(255,255,255,.1);margin:12px 0}
-    .expense-item{display:grid;grid-template-columns:minmax(0,1fr) 120px 52px;gap:8px;margin-top:10px;width:100%;max-width:100%;}
-    .expense-item .btn{width:52px;padding:12px 0;}
-    .tabs{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(8,11,16,.85);border-top:1px solid rgba(255,255,255,.1);backdrop-filter:blur(14px);}
-    .tabs .bar{max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-    .tab{padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.1);text-align:center;user-select:none;}
+    .expense-item{
+      display:grid;
+      grid-template-columns: minmax(0,1fr) 120px 52px;
+      gap:8px;
+      margin-top:10px;
+      width:100%;
+      max-width:100%;
+    }
+    .expense-item .btn{width:52px; padding: 12px 0;}
+    .tabs{
+      position:fixed;left:0;right:0;bottom:0;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      background:rgba(8,11,16,.85);
+      border-top:1px solid rgba(255,255,255,.1);
+      backdrop-filter: blur(14px);
+    }
+    .tabs .bar{
+      max-width:520px;margin:0 auto;
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;
+    }
+    .tab{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.1);
+      text-align:center;user-select:none;
+    }
     .tab.active{background:rgba(10,132,255,.2)}
-    .row{display:flex;gap:10px;align-items:center;}
-    @media (max-width:420px){.grid{grid-template-columns:minmax(0,1fr);} .summary{grid-template-columns:minmax(0,1fr);} .pill input{width:130px;}}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .toggle{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+    }
+    .muted{color:var(--muted);font-size:12px}
+    @media (max-width: 420px){
+      .grid{ grid-template-columns: minmax(0,1fr); }
+      .summary{ grid-template-columns: minmax(0,1fr); }
+      .pill input{ width: 130px; }
+    }
   </style>
 </head>
 
@@ -65,16 +185,20 @@
 
 <section id="view-entry">
   <div class="card">
+
     <div class="grid">
       <label>Τζίρος (€)
         <input id="revenue" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
       </label>
+
       <label>Μπουρμπουάρ (€)
         <input id="tip1" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
       </label>
+
       <label>Άλλα (€)
         <input id="tip2" class="field" type="number" inputmode="decimal" step="0.01" placeholder="0" />
       </label>
+
       <label>Σύνολο εξόδων (€)
         <input id="expensesTotal" class="field" inputmode="decimal" placeholder="0.00" disabled />
       </label>
@@ -113,6 +237,7 @@
 
 <section id="view-summary" style="display:none">
   <div class="card">
+
     <div class="summary">
       <div class="kpi"><div class="k">Ημέρες</div><div id="sumDays" class="v">0</div></div>
       <div class="kpi"><div class="k">Τζίρος</div><div id="sumRevenue" class="v">€0</div></div>
@@ -136,8 +261,28 @@
 
     <div class="hr"></div>
 
-    <!-- κρατάμε τα inputs για auto-backup, χωρίς κουμπιά -->
-    <input id="importFile" type="file" accept="application/json" style="display:none" />
+    <!-- Google Sync Panel -->
+    <div class="toggle">
+      <div style="min-width:0">
+        <div style="font-weight:900">Google Drive Auto-Sync</div>
+        <div id="syncState" class="muted">…</div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin:0">
+        <span class="muted">Sync</span>
+        <input id="syncToggle" type="checkbox" />
+      </label>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="syncLoginBtn" class="btn small" type="button">Σύνδεση Google</button>
+      <button id="syncBtn" class="btn small" type="button">Sync τώρα</button>
+    </div>
+
+    <div class="muted" style="margin-top:8px">
+      * Τα δεδομένα αποθηκεύονται κρυφά στο Google Drive (AppDataFolder).<br/>
+      Αν καθαρίσεις cookies/storage, απλά ξανακάνεις σύνδεση και τα φέρνει πίσω.
+    </div>
+
   </div>
 </section>
 
@@ -151,8 +296,23 @@
   </div>
 </div>
 
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <script src="db.js"></script>
+<script src="driveSync.js"></script>
+
+<script>
+  // ⬇️ ΒΑΛΕ ΕΔΩ ΤΟ CLIENT ID ΣΟΥ
+  const GOOGLE_CLIENT_ID = "PASTE_YOUR_CLIENT_ID_HERE.apps.googleusercontent.com";
+
+  window.addEventListener("load", ()=>{
+    DriveSync.init({ clientId: GOOGLE_CLIENT_ID });
+  });
+</script>
+
 <script src="app.js"></script>
+
 <script>
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js");
