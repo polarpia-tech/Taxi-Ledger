@@ -20,9 +20,13 @@ const sumExpenses = $("sumExpenses");
 const sumAllIn = $("sumAllIn");
 const sumNet = $("sumNet");
 
+const syncBtn = $("syncBtn");
+const syncToggle = $("syncToggle");
+const syncState = $("syncState");
+const syncLoginBtn = $("syncLoginBtn");
+
 let expenses = [];
 
-/* ---------- helpers ---------- */
 function n(v){
   if (v === "" || v == null) return 0;
   const s = String(v).replace(",", ".");
@@ -38,7 +42,6 @@ function today(){
   return d.toISOString().slice(0,10);
 }
 
-/* ---------- calc (Τζίρος ξεχωριστά) ---------- */
 function calc(){
   const revenue = n(revenueEl.value);
   const tip = n(tip1El.value);
@@ -57,7 +60,6 @@ function calc(){
   kpiNet.textContent     = eur(net);
 }
 
-/* ---------- expenses UI ---------- */
 function renderExpenses(){
   const box = $("expensesList");
   box.innerHTML = "";
@@ -104,7 +106,6 @@ $("addExpenseBtn").addEventListener("click", ()=>{
   renderExpenses();
 });
 
-/* ---------- History/Summary ---------- */
 async function renderHistory(){
   const list = $("historyList");
   list.innerHTML = "";
@@ -133,7 +134,7 @@ async function renderHistory(){
     left.style.minWidth = "0";
 
     const date = document.createElement("div");
-    date.style.fontWeight = "800";
+    date.style.fontWeight = "900";
     date.textContent = d.date;
 
     const meta = document.createElement("div");
@@ -167,6 +168,7 @@ async function renderHistory(){
         ? d.expenses.map(x=>({label:x.label||"", amount:(x.amount??"").toString()}))
         : [];
       renderExpenses();
+
       document.querySelector('.tab[data-tab="entry"]').click();
     });
 
@@ -197,42 +199,6 @@ async function renderSummary(){
   sumNet.textContent = eur(t.net);
 }
 
-/* ---------- AUTO BACKUP (χωρίς κουμπί) ---------- */
-/*
-  Αποθηκεύουμε snapshot σε localStorage σε ΚΑΘΕ save.
-  Αυτό δεν επιβιώνει αν κάνεις "Clear site data", αλλά:
-  - σε crash/bug/κάτι που πάει στραβά, σε σώζει
-  - και μπορούμε να κάνουμε auto-restore αν βρει backup και η DB είναι άδεια
-*/
-const LS_KEY = "taxi_ledger_autobackup_v1";
-
-async function autoBackup(){
-  try{
-    const all = await TaxiDB.getAllDays();
-    const payload = { exportedAt: new Date().toISOString(), data: all };
-    localStorage.setItem(LS_KEY, JSON.stringify(payload));
-  }catch(_){}
-}
-
-async function autoRestoreIfNeeded(){
-  try{
-    const all = await TaxiDB.getAllDays();
-    if (all && all.length) return;
-
-    const raw = localStorage.getItem(LS_KEY);
-    if(!raw) return;
-
-    const json = JSON.parse(raw);
-    const rows = Array.isArray(json?.data) ? json.data : [];
-    if(!rows.length) return;
-
-    for(const d of rows){
-      if(d && d.date) await TaxiDB.putDay(d);
-    }
-  }catch(_){}
-}
-
-/* ---------- Save ---------- */
 $("saveBtn").addEventListener("click", async ()=>{
   const revenue = n(revenueEl.value);
   const tip = n(tip1El.value);
@@ -260,12 +226,15 @@ $("saveBtn").addEventListener("click", async ()=>{
 
   await TaxiDB.putDay(day);
 
-  // ✅ αυτόματο backup
-  await autoBackup();
-
   alert("Αποθηκεύτηκε ✅");
+
   await renderHistory();
   await renderSummary();
+
+  // ✅ Auto Drive sync (χωρίς να κάνεις τίποτα)
+  if (window.DriveSync){
+    DriveSync.scheduleSync(900, "save");
+  }
 });
 
 /* Live calc + Enter closes keyboard */
@@ -295,10 +264,56 @@ document.querySelectorAll(".tab").forEach(t=>{
   });
 });
 
+/* Drive UI hooks */
+function paintSyncUI(s){
+  const st = DriveSync.getState();
+
+  const online = st.online ? "🟢 Online" : "🔴 Offline";
+  const enabled = st.enabled ? "✅ Sync ON" : "⛔ Sync OFF";
+  const signed = st.accessToken ? "🔐 Google: OK" : "🔓 Google: όχι";
+
+  let extra = "";
+  if (st.syncing) extra = " • ⏳ Sync…";
+  if (st.lastSyncAt) extra = ` • Τελευταίο: ${new Date(st.lastSyncAt).toLocaleString("el-GR")}`;
+
+  syncState.textContent = `${online} • ${enabled} • ${signed}${extra}`;
+  syncToggle.checked = st.enabled;
+  syncLoginBtn.textContent = st.accessToken ? "Αποσύνδεση Google" : "Σύνδεση Google";
+}
+
+window.addEventListener("taxiledger:syncStatus", ()=>paintSyncUI());
+window.addEventListener("taxiledger:syncLog", (e)=>{ /* μπορείς να το κάνεις toast αν θες */ });
+
+syncToggle.addEventListener("change", ()=>{
+  DriveSync.setEnabled(syncToggle.checked);
+  paintSyncUI();
+});
+
+syncBtn.addEventListener("click", ()=>{
+  DriveSync.syncNow({reason:"manual"});
+});
+
+syncLoginBtn.addEventListener("click", ()=>{
+  const st = DriveSync.getState();
+  if (st.accessToken){
+    DriveSync.signOut();
+  } else {
+    DriveSync.signIn({forcePrompt:true});
+  }
+  paintSyncUI();
+});
+
 /* boot */
 dateInput.value = today();
-await autoRestoreIfNeeded();
 renderExpenses();
 calc();
 renderHistory();
 renderSummary();
+
+// Αν έχεις ήδη δώσει άδεια στο Google στο παρελθόν, δοκίμασε σιωπηλή σύνδεση:
+setTimeout(()=>{
+  if (window.DriveSync){
+    DriveSync.signIn({forcePrompt:false});
+    paintSyncUI();
+  }
+}, 600);
