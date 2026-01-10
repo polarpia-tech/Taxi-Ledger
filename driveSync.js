@@ -5,7 +5,7 @@
 
 window.DriveSync = (() => {
   // ====== SET THESE ======
-  const CLIENT_ID = "PUT_YOUR_CLIENT_ID.apps.googleusercontent.com";
+  const CLIENT_ID = "362351555289-nodn1n6hkaieflmqm835rk6urkflb58j.apps.googleusercontent.com";
   const API_KEY   = "PUT_YOUR_API_KEY";
   // =======================
 
