@@ -1,267 +1,288 @@
-// Google Drive Auto-Sync (AppDataFolder)
-// Scope: https://www.googleapis.com/auth/drive.appdata
-// Uses Google Identity Services token client (access token, renews as needed)
+/* driveSync.js — Google Drive backup (optional)
+   - Manual sign-in (NO auto popups on refresh)
+   - Auto-sync only if enabled + token already present
+*/
 
-(function(){
-  const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
-  const FILE_NAME = "taxi-ledger-data.json";
-  const API = "https://www.googleapis.com/drive/v3";
-  const UPLOAD = "https://www.googleapis.com/upload/drive/v3";
+window.DriveSync = (() => {
+  // ====== SET THESE ======
+  const CLIENT_ID = "PUT_YOUR_CLIENT_ID.apps.googleusercontent.com";
+  const API_KEY   = "PUT_YOUR_API_KEY";
+  // =======================
 
-  const state = {
-    clientId: null,
-    tokenClient: null,
+  const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
+  const DISCOVERY = "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
+  const FILE_NAME = "taxi-ledger-backup.json";
+
+  let state = {
+    enabled: JSON.parse(localStorage.getItem("tls_sync_enabled") || "false"),
     accessToken: null,
-    fileId: null,
-    enabled: true,
-    lastSyncAt: 0,
+    expiresAt: 0,
+    online: navigator.onLine,
     syncing: false,
-    online: navigator.onLine
+    lastSyncAt: Number(localStorage.getItem("tls_lastSyncAt") || "0") || 0,
   };
 
-  function now(){ return Date.now(); }
+  let tokenClient = null;
+  let gsiLoaded = false;
+  let gapiLoaded = false;
+  let initPromise = null;
 
-  function log(msg){
-    window.dispatchEvent(new CustomEvent("taxiledger:syncLog",{detail:msg}));
-  }
-  function status(obj){
-    window.dispatchEvent(new CustomEvent("taxiledger:syncStatus",{detail:obj}));
-  }
-
-  function setOnline(v){
-    state.online = v;
-    status({online:v});
-  }
-
-  window.addEventListener("online", ()=>setOnline(true));
-  window.addEventListener("offline", ()=>setOnline(false));
-
-  function authReady(){
-    return !!(state.tokenClient && state.clientId);
-  }
-
-  async function ensureGisLoaded(){
-    // script is loaded in index.html; this is just a guard
-    if (window.google && window.google.accounts && window.google.accounts.oauth2) return;
-    throw new Error("Google Identity Services δεν φορτώθηκε.");
-  }
-
-  function init({clientId}){
-    state.clientId = clientId;
-
-    // Allow user to toggle sync later (optional)
-    const saved = localStorage.getItem("taxi_sync_enabled");
-    if (saved === "0") state.enabled = false;
-
-    ensureGisLoaded().then(()=>{
-      state.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: state.clientId,
-        scope: DRIVE_SCOPE,
-        callback: (resp) => {
-          if (resp && resp.access_token){
-            state.accessToken = resp.access_token;
-            log("Συνδέθηκες στο Google ✅");
-            status({signedIn:true});
-          } else {
-            log("Απέτυχε η σύνδεση Google.");
-          }
-        }
-      });
-
-      status({ready:true, signedIn:false, enabled:state.enabled, online:state.online});
-    });
-  }
-
-  function signIn({forcePrompt=false}={}){
-    if (!authReady()) return;
-    // prompt: '' tries silent if already granted; 'consent' forces UI
-    state.tokenClient.requestAccessToken({ prompt: forcePrompt ? "consent" : "" });
-  }
-
-  function signOut(){
-    state.accessToken = null;
-    state.fileId = null;
-    status({signedIn:false});
+  function emit(name, detail){
+    window.dispatchEvent(new CustomEvent(name, { detail }));
   }
 
   function setEnabled(v){
     state.enabled = !!v;
-    localStorage.setItem("taxi_sync_enabled", state.enabled ? "1" : "0");
-    status({enabled:state.enabled});
+    localStorage.setItem("tls_sync_enabled", JSON.stringify(state.enabled));
+    emit("taxiledger:syncStatus");
   }
 
-  async function apiFetch(url, options={}){
-    if (!state.accessToken) throw new Error("Δεν υπάρχει access token.");
-    const headers = Object.assign({}, options.headers || {}, {
-      "Authorization": `Bearer ${state.accessToken}`
+  function getState(){
+    return { ...state };
+  }
+
+  function setToken(token, expiresIn){
+    state.accessToken = token;
+    state.expiresAt = Date.now() + (expiresIn * 1000);
+    emit("taxiledger:syncStatus");
+  }
+
+  function clearToken(){
+    state.accessToken = null;
+    state.expiresAt = 0;
+    emit("taxiledger:syncStatus");
+  }
+
+  function isTokenValid(){
+    return !!state.accessToken && Date.now() < (state.expiresAt - 20_000);
+  }
+
+  function loadScript(src){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.defer = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => reject(new Error("Failed to load: " + src));
+      document.head.appendChild(s);
     });
-    return fetch(url, {...options, headers});
   }
 
-  async function findOrCreateFile(){
-    if (state.fileId) return state.fileId;
+  async function init(){
+    if (initPromise) return initPromise;
 
-    // Search in appDataFolder by name
-    const q = encodeURIComponent(`name='${FILE_NAME.replace(/'/g,"\\'")}' and trashed=false`);
-    const url = `${API}/files?spaces=appDataFolder&fields=files(id,name,modifiedTime)&q=${q}`;
+    initPromise = (async () => {
+      // Load GSI + GAPI
+      if (!gsiLoaded){
+        await loadScript("https://accounts.google.com/gsi/client");
+        gsiLoaded = true;
+      }
+      if (!gapiLoaded){
+        await loadScript("https://apis.google.com/js/api.js");
+        gapiLoaded = true;
+      }
 
-    const r = await apiFetch(url);
-    if (!r.ok) throw new Error("Drive list failed");
-    const j = await r.json();
-    const f = (j.files || [])[0];
+      await new Promise((resolve) => {
+        window.gapi.load("client", resolve);
+      });
 
-    if (f && f.id){
-      state.fileId = f.id;
-      return state.fileId;
-    }
+      await window.gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY],
+      });
 
-    // Create empty file in appDataFolder
-    const meta = {
+      tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+          if (resp && resp.access_token){
+            setToken(resp.access_token, resp.expires_in || 3600);
+          } else {
+            emit("taxiledger:syncLog", { msg:"No token received", resp });
+          }
+        }
+      });
+
+      emit("taxiledger:syncStatus");
+      return true;
+    })();
+
+    return initPromise;
+  }
+
+  async function signIn({ forcePrompt=false } = {}){
+    await init();
+    return new Promise((resolve) => {
+      // prompt: "consent" forces account picker. We avoid it unless user explicitly wants.
+      tokenClient.requestAccessToken({ prompt: forcePrompt ? "consent" : "" });
+      // callback updates state
+      setTimeout(() => resolve(true), 400);
+    });
+  }
+
+  function signOut(){
+    clearToken();
+  }
+
+  async function findOrCreateFileId(){
+    // Search in appDataFolder
+    const q = `name='${FILE_NAME.replace(/'/g,"\\'")}' and trashed=false`;
+    const res = await window.gapi.client.drive.files.list({
+      spaces: "appDataFolder",
+      q,
+      fields: "files(id,name,modifiedTime)"
+    });
+    const files = (res.result && res.result.files) || [];
+    if (files.length) return files[0].id;
+
+    // Create
+    const createRes = await window.gapi.client.drive.files.create({
+      resource: { name: FILE_NAME, parents: ["appDataFolder"] },
+      fields: "id"
+    });
+    return createRes.result.id;
+  }
+
+  async function uploadJson(fileId, jsonText){
+    const boundary = "-------314159265358979323846";
+    const delimiter = "\r\n--" + boundary + "\r\n";
+    const closeDelim = "\r\n--" + boundary + "--";
+
+    const metadata = {
       name: FILE_NAME,
+      mimeType: "application/json",
       parents: ["appDataFolder"]
     };
 
-    const createUrl = `${API}/files?fields=id`;
-    const cr = await apiFetch(createUrl, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(meta)
+    const multipartRequestBody =
+      delimiter +
+      "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+      JSON.stringify(metadata) +
+      delimiter +
+      "Content-Type: application/json\r\n\r\n" +
+      jsonText +
+      closeDelim;
+
+    const path = fileId
+      ? `/upload/drive/v3/files/${fileId}?uploadType=multipart`
+      : `/upload/drive/v3/files?uploadType=multipart`;
+
+    const method = fileId ? "PATCH" : "POST";
+
+    return window.gapi.client.request({
+      path,
+      method,
+      headers: {
+        "Content-Type": `multipart/related; boundary="${boundary}"`,
+      },
+      body: multipartRequestBody,
     });
-
-    if (!cr.ok) throw new Error("Drive create failed");
-    const cj = await cr.json();
-    state.fileId = cj.id;
-    return state.fileId;
   }
 
-  async function downloadRemote(){
-    const fileId = await findOrCreateFile();
-    // alt=media returns file content
-    const url = `${API}/files/${fileId}?alt=media`;
-    const r = await apiFetch(url);
-
-    // If brand new empty file, may return 404/empty; handle gracefully
-    if (!r.ok){
-      log("Δεν βρήκα δεδομένα στο Drive (θα ανέβουν τοπικά).");
-      return null;
-    }
-
-    const text = await r.text();
-    if (!text || !text.trim()) return null;
-
-    try{
-      return JSON.parse(text);
-    }catch{
-      return null;
-    }
-  }
-
-  async function uploadRemote(payload){
-    const fileId = await findOrCreateFile();
-    const url = `${UPLOAD}/files/${fileId}?uploadType=media`;
-
-    const r = await apiFetch(url, {
-      method: "PATCH",
-      headers: {"Content-Type":"application/json; charset=utf-8"},
-      body: JSON.stringify(payload)
+  async function downloadJson(fileId){
+    const res = await window.gapi.client.drive.files.get({
+      fileId,
+      alt: "media"
     });
-    if (!r.ok) throw new Error("Drive upload failed");
+    // gapi returns parsed JSON sometimes; normalize to text
+    if (typeof res.body === "string") return res.body;
+    try { return JSON.stringify(res.body); } catch { return String(res.body); }
   }
 
-  function normalizePayload(remote){
-    // Accept {version, data:[...]} or raw array
-    if (!remote) return {version:1, data:[]};
-    if (Array.isArray(remote)) return {version:1, data:remote};
-    if (Array.isArray(remote.data)) return {version: remote.version || 1, data: remote.data};
-    return {version:1, data:[]};
-  }
-
-  function mergeLocalRemote(localArr, remoteArr){
-    // Merge by date, keep newer updatedAt
-    const map = new Map();
-
-    for (const d of remoteArr){
-      if (!d || !d.date) continue;
-      map.set(d.date, d);
+  async function syncNow({ reason="manual" } = {}){
+    await init();
+    if (!isTokenValid()){
+      emit("taxiledger:syncLog", { msg:"No valid token for sync" });
+      return { ok:false, err:"no_token" };
     }
-    for (const d of localArr){
-      if (!d || !d.date) continue;
-      const old = map.get(d.date);
-      if (!old) { map.set(d.date, d); continue; }
-      const a = Number(old.updatedAt||0);
-      const b = Number(d.updatedAt||0);
-      map.set(d.date, b >= a ? d : old);
-    }
-
-    const merged = Array.from(map.values()).sort((a,b)=> (a.date||"").localeCompare(b.date||""));
-    return merged;
-  }
-
-  async function applyToLocalDB(merged){
-    // Write merged into IndexedDB
-    for (const d of merged){
-      await TaxiDB.putDay(d);
-    }
-  }
-
-  async function syncNow({reason="manual"}={}){
-    if (!state.enabled) return;
-    if (!state.online) return;
-    if (!state.accessToken) return; // not signed in
-    if (state.syncing) return;
 
     state.syncing = true;
-    status({syncing:true, reason});
-    log(`Sync… (${reason})`);
+    emit("taxiledger:syncStatus");
 
     try{
-      const local = await TaxiDB.getAllDays();
-      const remoteRaw = await downloadRemote();
-      const remote = normalizePayload(remoteRaw);
+      window.gapi.client.setToken({ access_token: state.accessToken });
 
-      const merged = mergeLocalRemote(local, remote.data);
+      const days = await TaxiDB.getAllDays();
       const payload = {
-        app: "Taxi Ledger",
+        app: "TaxiLedger",
         version: 1,
-        updatedAt: now(),
-        data: merged
+        exportedAt: Date.now(),
+        days
       };
+      const jsonText = JSON.stringify(payload);
 
-      // Apply merged to local first (to pull from Drive)
-      await applyToLocalDB(merged);
+      const fileId = await findOrCreateFileId();
+      await uploadJson(fileId, jsonText);
 
-      // Push merged to Drive
-      await uploadRemote(payload);
-
-      state.lastSyncAt = now();
-      log("Sync OK ✅");
-      status({syncing:false, lastSyncAt: state.lastSyncAt});
-      window.dispatchEvent(new CustomEvent("taxiledger:syncDone",{detail:{ok:true}}));
-    }catch(e){
-      log("Sync failed ❌");
-      status({syncing:false, error:String(e?.message||e)});
-      window.dispatchEvent(new CustomEvent("taxiledger:syncDone",{detail:{ok:false,error:String(e?.message||e)}}));
-    }finally{
+      state.lastSyncAt = Date.now();
+      localStorage.setItem("tls_lastSyncAt", String(state.lastSyncAt));
+      emit("taxiledger:syncLog", { msg:`Synced (${reason})`, count: days.length });
+      return { ok:true };
+    } catch(err){
+      emit("taxiledger:syncLog", { msg:"Sync error", err: String(err) });
+      return { ok:false, err:String(err) };
+    } finally {
       state.syncing = false;
+      emit("taxiledger:syncStatus");
     }
   }
 
-  // Auto sync throttle
-  let syncTimer = null;
-  function scheduleSync(ms=1200, reason="autosave"){
-    if (!state.enabled || !state.online || !state.accessToken) return;
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(()=>syncNow({reason}), ms);
+  async function restoreNow(){
+    await init();
+    if (!isTokenValid()){
+      return { ok:false, err:"no_token" };
+    }
+
+    state.syncing = true;
+    emit("taxiledger:syncStatus");
+
+    try{
+      window.gapi.client.setToken({ access_token: state.accessToken });
+      const fileId = await findOrCreateFileId();
+      const body = await downloadJson(fileId);
+
+      const data = JSON.parse(body || "{}");
+      const days = Array.isArray(data.days) ? data.days : [];
+      const mergedCount = await TaxiDB.mergeMany(days);
+
+      emit("taxiledger:syncLog", { msg:"Restored", mergedCount });
+      state.lastSyncAt = Date.now();
+      localStorage.setItem("tls_lastSyncAt", String(state.lastSyncAt));
+      return { ok:true, mergedCount };
+    } catch(err){
+      emit("taxiledger:syncLog", { msg:"Restore error", err: String(err) });
+      return { ok:false, err:String(err) };
+    } finally {
+      state.syncing = false;
+      emit("taxiledger:syncStatus");
+    }
   }
 
-  // Public API
-  window.DriveSync = {
+  // schedule helper (used by app autosave)
+  let timer = null;
+  function scheduleSync(ms=1200, reason="auto"){
+    if (!state.enabled) return;
+    if (!isTokenValid()) return; // important: NO popup
+    clearTimeout(timer);
+    timer = setTimeout(() => syncNow({reason}), ms);
+  }
+
+  function refreshOnline(){
+    state.online = navigator.onLine;
+    emit("taxiledger:syncStatus");
+  }
+  window.addEventListener("online", refreshOnline);
+  window.addEventListener("offline", refreshOnline);
+
+  return {
     init,
+    getState,
+    setEnabled,
     signIn,
     signOut,
-    setEnabled,
     syncNow,
+    restoreNow,
     scheduleSync,
-    getState: ()=>({...state})
   };
 })();
