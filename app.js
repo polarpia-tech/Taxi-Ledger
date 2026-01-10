@@ -1,8 +1,8 @@
 const $ = (id) => document.getElementById(id);
 
 const revenueEl = $("revenue");
-const tip1El = $("tip1");   // Μπουρμπουάρ
-const tip2El = $("tip2");   // Άλλα
+const tip1El = $("tip1");
+const tip2El = $("tip2");
 const expensesTotalEl = $("expensesTotal");
 const noteEl = $("note");
 const dateInput = $("dateInput");
@@ -20,12 +20,19 @@ const sumExpenses = $("sumExpenses");
 const sumAllIn = $("sumAllIn");
 const sumNet = $("sumNet");
 
-const syncBtn = $("syncBtn");
+const autosaveState = $("autosaveState");
+const toastEl = $("toast");
+
 const syncToggle = $("syncToggle");
 const syncState = $("syncState");
 const syncLoginBtn = $("syncLoginBtn");
+const syncNowBtn = $("syncNowBtn");
+const restoreBtn = $("restoreBtn");
 
 let expenses = [];
+let userPickedDate = false;
+let autosaveTimer = null;
+let lastAutosaveAt = 0;
 
 function n(v){
   if (v === "" || v == null) return 0;
@@ -41,6 +48,29 @@ function today(){
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0,10);
 }
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(()=>toastEl.classList.remove("show"), 1200);
+}
+
+function ensureDateIsFresh(){
+  if (!userPickedDate){
+    const t = today();
+    if (dateInput.value !== t) dateInput.value = t;
+  }
+}
+
+dateInput.addEventListener("change", async ()=>{
+  userPickedDate = true;
+  await loadDay(dateInput.value);
+});
+
+document.addEventListener("visibilitychange", ()=>{
+  if (!document.hidden) ensureDateIsFresh();
+});
+window.addEventListener("focus", ensureDateIsFresh);
 
 function calc(){
   const revenue = n(revenueEl.value);
@@ -72,7 +102,7 @@ function renderExpenses(){
     l.className = "field";
     l.placeholder = "Περιγραφή (π.χ. καύσιμα)";
     l.value = e.label || "";
-    l.addEventListener("input", ()=> e.label = l.value);
+    l.addEventListener("input", ()=>{ e.label = l.value; queueAutosave("expense"); });
 
     const a = document.createElement("input");
     a.className = "field";
@@ -81,8 +111,8 @@ function renderExpenses(){
     a.step = "0.01";
     a.placeholder = "€";
     a.value = e.amount ?? "";
-    a.addEventListener("input", ()=> { e.amount = a.value; calc(); });
-    a.addEventListener("change", ()=> { e.amount = a.value; calc(); });
+    a.addEventListener("input", ()=> { e.amount = a.value; calc(); queueAutosave("expense"); });
+    a.addEventListener("change", ()=> { e.amount = a.value; calc(); queueAutosave("expense"); });
     a.addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") a.blur(); });
 
     const d = document.createElement("button");
@@ -92,6 +122,7 @@ function renderExpenses(){
       expenses.splice(i,1);
       renderExpenses();
       calc();
+      queueAutosave("expense-del");
     });
 
     row.append(l,a,d);
@@ -104,7 +135,83 @@ function renderExpenses(){
 $("addExpenseBtn").addEventListener("click", ()=>{
   expenses.unshift({label:"", amount:""});
   renderExpenses();
+  queueAutosave("expense-add");
 });
+
+/* ---------- Save / Autosave ---------- */
+
+function buildDayObject(){
+  const revenue = n(revenueEl.value);
+  const tip = n(tip1El.value);
+  const other = n(tip2El.value);
+  const expTotal = n(expensesTotalEl.value);
+
+  const extras = tip + other;
+  const total = revenue + extras;
+  const net = total - expTotal;
+
+  return {
+    date: dateInput.value || today(),
+    revenue,
+    tip1: tip,
+    tip2: other,
+    expenses: expenses
+      .map(e=>({label:(e.label||"").trim(), amount:n(e.amount)}))
+      .filter(e=>e.label || e.amount),
+    expensesTotal: expTotal,
+    gross: total,
+    net,
+    note: (noteEl.value||"").trim(),
+    updatedAt: Date.now()
+  };
+}
+
+async function saveNow({silent=false, reason="manual"} = {}){
+  const day = buildDayObject();
+  await TaxiDB.putDay(day);
+  lastAutosaveAt = Date.now();
+
+  if (!silent){
+    toast("Αποθηκεύτηκε ✅");
+  } else {
+    autosaveState.textContent = "Auto-save: αποθηκεύτηκε ✅";
+  }
+
+  await renderHistory();
+  await renderSummary();
+
+  // Auto-sync μόνο αν:
+  // 1) υπάρχει DriveSync
+  // 2) είναι enabled
+  // 3) υπάρχει έγκυρο token (χωρίς popup)
+  if (window.DriveSync){
+    DriveSync.scheduleSync(1200, reason);
+  }
+}
+
+function queueAutosave(reason="auto"){
+  autosaveState.textContent = "Auto-save: σε εξέλιξη…";
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=> saveNow({silent:true, reason}), 800);
+}
+
+$("saveBtn").addEventListener("click", ()=> saveNow({silent:false, reason:"manual"}));
+
+/* Live calc + Enter closes keyboard */
+function bindMoneyInput(el){
+  const handler = () => { calc(); queueAutosave("input"); };
+  el.addEventListener("input", handler);
+  el.addEventListener("change", handler);
+  el.addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") el.blur(); });
+}
+bindMoneyInput(revenueEl);
+bindMoneyInput(tip1El);
+bindMoneyInput(tip2El);
+
+noteEl.addEventListener("input", ()=> queueAutosave("note"));
+noteEl.addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") noteEl.blur(); });
+
+/* ---------- History / Summary ---------- */
 
 async function renderHistory(){
   const list = $("historyList");
@@ -122,54 +229,41 @@ async function renderHistory(){
 
   all.forEach((d)=>{
     const item = document.createElement("div");
-    item.style.border = "1px solid rgba(255,255,255,.10)";
-    item.style.background = "rgba(255,255,255,.04)";
-    item.style.borderRadius = "16px";
-    item.style.padding = "12px";
-    item.style.display = "flex";
-    item.style.justifyContent = "space-between";
-    item.style.gap = "12px";
+    item.className = "historyItem";
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
 
     const date = document.createElement("div");
-    date.style.fontWeight = "900";
+    date.className = "d";
     date.textContent = d.date;
 
     const meta = document.createElement("div");
-    meta.style.marginTop = "6px";
-    meta.style.color = "rgba(234,241,255,.65)";
-    meta.style.fontSize = "12px";
+    meta.className = "m";
 
     const revenue = d.revenue || 0;
     const tip = d.tip1 || 0;
     const other = d.tip2 || 0;
+    const exp = d.expensesTotal || 0;
+
     const extras = tip + other;
     const total = revenue + extras;
 
-    meta.textContent = `Τζίρος: ${eur(revenue)} • Μπουρμπουάρ: ${eur(tip)} • Άλλα: ${eur(other)} • Σύνολο: ${eur(total)} • Έξοδα: ${eur(d.expensesTotal||0)}`;
+    meta.textContent =
+      `Τζίρος: ${eur(revenue)} • Μπουρμπουάρ: ${eur(tip)} • Άλλα: ${eur(other)} • Έξοδα: ${eur(exp)} • Όλα μαζί: ${eur(total)}`;
 
     const net = document.createElement("div");
-    net.style.fontWeight = "900";
-    net.style.whiteSpace = "nowrap";
-    net.textContent = eur(d.net||0);
+    net.className = "n";
+    net.textContent = eur(d.net || 0);
 
     left.append(date, meta);
     item.append(left, net);
 
     item.addEventListener("click", async ()=>{
-      dateInput.value = d.date;
-      revenueEl.value = d.revenue ?? "";
-      tip1El.value = d.tip1 ?? "";
-      tip2El.value = d.tip2 ?? "";
-      noteEl.value = d.note ?? "";
-      expenses = Array.isArray(d.expenses)
-        ? d.expenses.map(x=>({label:x.label||"", amount:(x.amount??"").toString()}))
-        : [];
-      renderExpenses();
-
+      userPickedDate = true;
+      await loadDay(d.date);
       document.querySelector('.tab[data-tab="entry"]').click();
+      toast("Φορτώθηκε ✅");
     });
 
     list.append(item);
@@ -199,57 +293,40 @@ async function renderSummary(){
   sumNet.textContent = eur(t.net);
 }
 
-$("saveBtn").addEventListener("click", async ()=>{
-  const revenue = n(revenueEl.value);
-  const tip = n(tip1El.value);
-  const other = n(tip2El.value);
-  const expTotal = n(expensesTotalEl.value);
+/* ---------- Load day ---------- */
 
-  const extras = tip + other;
-  const total = revenue + extras;
-  const net = total - expTotal;
+async function loadDay(dateStr){
+  const d = await TaxiDB.getDay(dateStr);
+  dateInput.value = dateStr;
 
-  const day = {
-    date: dateInput.value || today(),
-    revenue,
-    tip1: tip,
-    tip2: other,
-    expenses: expenses
-      .map(e=>({label:(e.label||"").trim(), amount:n(e.amount)}))
-      .filter(e=>e.label || e.amount),
-    expensesTotal: expTotal,
-    gross: total,
-    net,
-    note: (noteEl.value||"").trim(),
-    updatedAt: Date.now()
-  };
-
-  await TaxiDB.putDay(day);
-
-  alert("Αποθηκεύτηκε ✅");
-
-  await renderHistory();
-  await renderSummary();
-
-  // ✅ Auto Drive sync (χωρίς να κάνεις τίποτα)
-  if (window.DriveSync){
-    DriveSync.scheduleSync(900, "save");
+  if (!d){
+    revenueEl.value = "";
+    tip1El.value = "";
+    tip2El.value = "";
+    noteEl.value = "";
+    expenses = [];
+    renderExpenses();
+    calc();
+    autosaveState.textContent = "Auto-save: έτοιμο";
+    return;
   }
-});
 
-/* Live calc + Enter closes keyboard */
-function bindMoneyInput(el){
-  const handler = () => calc();
-  el.addEventListener("input", handler);
-  el.addEventListener("change", handler);
-  el.addEventListener("keyup", handler);
-  el.addEventListener("keydown", (ev)=>{ if(ev.key==="Enter") el.blur(); });
+  revenueEl.value = (d.revenue ?? "") === 0 ? "" : String(d.revenue ?? "");
+  tip1El.value = (d.tip1 ?? "") === 0 ? "" : String(d.tip1 ?? "");
+  tip2El.value = (d.tip2 ?? "") === 0 ? "" : String(d.tip2 ?? "");
+  noteEl.value = d.note ?? "";
+
+  expenses = Array.isArray(d.expenses)
+    ? d.expenses.map(x=>({label:x.label||"", amount:(x.amount??"").toString()}))
+    : [];
+
+  renderExpenses();
+  calc();
+  autosaveState.textContent = "Auto-save: έτοιμο";
 }
-bindMoneyInput(revenueEl);
-bindMoneyInput(tip1El);
-bindMoneyInput(tip2El);
 
-/* Tabs */
+/* ---------- Tabs ---------- */
+
 document.querySelectorAll(".tab").forEach(t=>{
   t.addEventListener("click", async ()=>{
     document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -264,56 +341,77 @@ document.querySelectorAll(".tab").forEach(t=>{
   });
 });
 
-/* Drive UI hooks */
-function paintSyncUI(s){
+/* ---------- Drive UI ---------- */
+
+function paintSyncUI(){
+  if (!window.DriveSync){
+    syncState.textContent = "DriveSync: δεν φορτώθηκε";
+    return;
+  }
   const st = DriveSync.getState();
-
   const online = st.online ? "🟢 Online" : "🔴 Offline";
-  const enabled = st.enabled ? "✅ Sync ON" : "⛔ Sync OFF";
+  const enabled = st.enabled ? "✅ Auto-sync ON" : "⛔ Auto-sync OFF";
   const signed = st.accessToken ? "🔐 Google: OK" : "🔓 Google: όχι";
-
   let extra = "";
   if (st.syncing) extra = " • ⏳ Sync…";
   if (st.lastSyncAt) extra = ` • Τελευταίο: ${new Date(st.lastSyncAt).toLocaleString("el-GR")}`;
-
   syncState.textContent = `${online} • ${enabled} • ${signed}${extra}`;
+
   syncToggle.checked = st.enabled;
   syncLoginBtn.textContent = st.accessToken ? "Αποσύνδεση Google" : "Σύνδεση Google";
 }
 
-window.addEventListener("taxiledger:syncStatus", ()=>paintSyncUI());
-window.addEventListener("taxiledger:syncLog", (e)=>{ /* μπορείς να το κάνεις toast αν θες */ });
+window.addEventListener("taxiledger:syncStatus", paintSyncUI);
 
 syncToggle.addEventListener("change", ()=>{
   DriveSync.setEnabled(syncToggle.checked);
   paintSyncUI();
 });
 
-syncBtn.addEventListener("click", ()=>{
-  DriveSync.syncNow({reason:"manual"});
-});
-
-syncLoginBtn.addEventListener("click", ()=>{
+syncLoginBtn.addEventListener("click", async ()=>{
   const st = DriveSync.getState();
   if (st.accessToken){
     DriveSync.signOut();
+    toast("Έγινε αποσύνδεση");
   } else {
-    DriveSync.signIn({forcePrompt:true});
+    // ΜΟΝΟ εδώ ανοίγει Google (και μόνο όταν το πατήσεις)
+    await DriveSync.signIn({forcePrompt:false});
+    toast("Συνδέθηκε ✅");
   }
   paintSyncUI();
 });
 
-/* boot */
-dateInput.value = today();
-renderExpenses();
-calc();
-renderHistory();
-renderSummary();
+syncNowBtn.addEventListener("click", async ()=>{
+  const r = await DriveSync.syncNow({reason:"manual"});
+  toast(r.ok ? "Sync OK ✅" : "Sync απέτυχε");
+  paintSyncUI();
+});
 
-// Αν έχεις ήδη δώσει άδεια στο Google στο παρελθόν, δοκίμασε σιωπηλή σύνδεση:
-setTimeout(()=>{
+restoreBtn.addEventListener("click", async ()=>{
+  const r = await DriveSync.restoreNow();
+  if (r.ok){
+    await renderHistory();
+    await renderSummary();
+    // φορτώνουμε ξανά την τρέχουσα ημερομηνία
+    await loadDay(dateInput.value || today());
+    toast("Restore OK ✅");
+  } else {
+    toast("Restore απέτυχε");
+  }
+  paintSyncUI();
+});
+
+/* ---------- Boot ---------- */
+
+(async function boot(){
+  ensureDateIsFresh();
+  await loadDay(dateInput.value || today());
+  await renderHistory();
+  await renderSummary();
+
+  // DriveSync init χωρίς login/popup
   if (window.DriveSync){
-    DriveSync.signIn({forcePrompt:false});
+    try { await DriveSync.init(); } catch {}
     paintSyncUI();
   }
-}, 600);
+})();
