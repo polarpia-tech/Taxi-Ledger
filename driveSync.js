@@ -6,7 +6,7 @@
 window.DriveSync = (() => {
   // ====== SET THESE ======
   const CLIENT_ID = "362351555289-nodn1n6hkaieflmqm835rk6urkflb58j.apps.googleusercontent.com";
-  const API_KEY   = "PUT_YOUR_API_KEY";
+  const API_KEY   = "AIzaSyB_x1GyCo5o8r5_Ud3kwWywf2nUObgbaig";
   // =======================
 
   const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
