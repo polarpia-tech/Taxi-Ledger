@@ -1,4 +1,4 @@
-const CACHE = "taxi-ledger-v44";
+const CACHE = "taxi-ledger-v45";
 const ASSETS = [
   "./",
   "./index.html",
