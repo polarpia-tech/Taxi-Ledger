@@ -1,39 +1,39 @@
-const CACHE = "taxi-ledger-v46";
+const CACHE_NAME = 'taxi-ledger-v1';
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./app.js",
-  "./db.js",
-  "./driveSync.js",
-  "./manifest.webmanifest"
+  './',
+  './index.html',
+  './app.js',
+  './db.js',
+  './driveSync.js',
+  './manifest.webmanifest',
+  './sw.js'
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil((async () => {
-    const c = await caches.open(CACHE);
-    await c.addAll(ASSETS);
-    self.skipWaiting();
-  })());
+// Εγκατάσταση και αποθήκευση αρχείων στην προσωρινή μνήμη (Cache)
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
+  );
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => (k === CACHE ? null : caches.delete(k))));
-    self.clients.claim();
-  })());
+// Ενεργοποίηση και καθαρισμός παλιάς μνήμης
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
+    })
+  );
 });
 
-self.addEventListener("fetch", (e) => {
-  e.respondWith((async () => {
-    const cached = await caches.match(e.request);
-    if (cached) return cached;
-    try {
-      const res = await fetch(e.request);
-      return res;
-    } catch {
-      return cached || new Response("Offline", { status: 200 });
-    }
-  })());
+// Στρατηγική: Προτεραιότητα στο Δίκτυο, αν αποτύχει πάρε από την Cache
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
+  );
 });
-  
