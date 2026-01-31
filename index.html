@@ -1,147 +1,241 @@
 <!doctype html>
 <html lang="el">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Taxi Ledger Pro</title>
-    
-    <script src="https://accounts.google.com/gsi/client"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Taxi Ledger Pro</title>
+  
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
 
-    <style>
-        :root { --bg: #070a14; --text: #eef3ff; --accent: #6aa7ff; --ok: #34d399; --danger: #ff5b7a; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; padding-bottom: 80px; }
-        .wrap { padding: 20px; max-width: 500px; margin: auto; }
-        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
-        .field { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-main { background: var(--accent); color: white; }
-        .btn-ghost { background: #222; color: #ccc; }
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #0a0a0a; border-top: 1px solid #333; }
-        .nav-item { flex: 1; padding: 20px; text-align: center; cursor: pointer; opacity: 0.6; }
-        .nav-item.active { opacity: 1; color: var(--accent); border-top: 2px solid var(--accent); }
-        .view { display: none; }
-        .view.active { display: block; }
-        .history-item { border-bottom: 1px solid #222; padding: 10px 0; display: flex; justify-content: space-between; }
-    </style>
+  <style>
+    :root {
+      --bg: #070a14; --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.10); --text: #eef3ff;
+      --muted: rgba(238,243,255,.66); --accent: #6aa7ff;
+      --accent2: #7c5cff; --ok: #34d399; --danger: #ff5b7a;
+    }
+    
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+      margin: 0; color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; 
+      background: var(--bg); overflow-x: hidden; padding-bottom: 100px;
+    }
+
+    /* Professional Background Gradient */
+    .bg-glow { 
+      position: fixed; inset: 0; z-index: -2; 
+      background: radial-gradient(1200px 700px at 18% -12%, rgba(106,167,255,.15), transparent 60%), 
+                  linear-gradient(180deg, #050712 0%, #070a14 100%); 
+    }
+
+    .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+
+    /* Glassmorphism Cards */
+    .card { 
+      background: var(--card); border: 1px solid var(--stroke); 
+      border-radius: 24px; overflow: hidden; backdrop-filter: blur(12px); 
+      margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    
+    .card-header { padding: 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--stroke); font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+
+    /* KPIs Grid */
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+    .kpi-card { background: rgba(0,0,0,0.2); padding: 14px; border-radius: 18px; border: 1px solid var(--stroke); }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-value { font-size: 20px; font-weight: 900; margin-top: 4px; }
+    .kpi-value.net { color: var(--ok); }
+
+    /* Inputs */
+    .input-group { padding: 0 16px 16px; }
+    label { font-size: 12px; color: var(--muted); font-weight: 700; margin: 12px 4px 6px; display: block; }
+    .field { 
+      width: 100%; padding: 14px; border-radius: 14px; 
+      background: rgba(0,0,0,0.3); border: 1px solid var(--stroke); 
+      color: white; outline: none; font-size: 16px; transition: border 0.3s;
+    }
+    .field:focus { border-color: var(--accent); }
+
+    /* Buttons */
+    .btn { 
+      width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--stroke); 
+      font-weight: 800; cursor: pointer; display: flex; align-items: center; 
+      justify-content: center; gap: 10px; font-size: 15px; transition: 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; box-shadow: 0 4px 15px rgba(106,167,255,0.3); }
+    .btn-ghost { background: rgba(255,255,255,0.05); color: white; margin-top: 10px; }
+
+    /* Navigation */
+    .nav-bar { 
+      position: fixed; bottom: 0; left: 0; right: 0; 
+      background: rgba(7,10,20,0.8); backdrop-filter: blur(20px); 
+      display: flex; border-top: 1px solid var(--stroke); padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+    }
+    .nav-item { flex: 1; text-align: center; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+    .view { display: none; }
+    .view.active { display: block; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .history-card { padding: 14px; border-bottom: 1px solid var(--stroke); display: flex; justify-content: space-between; align-items: center; }
+  </style>
 </head>
 <body>
-    <div class="wrap">
-        <h2 id="pageTitle">Νέα Εγγραφή</h2>
-        <input type="date" id="dateInput" class="field">
+  <div class="bg-glow"></div>
+  
+  <div class="container">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="font-weight: 900; font-size: 22px; background: linear-gradient(to right, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TAXI LEDGER PRO</div>
+      <input type="date" id="dateInput" class="field" style="width: auto; padding: 8px 12px;">
+    </header>
 
-        <div id="view-entry" class="view active">
-            <div class="card">
-                <label>Τζίρος (€)</label>
-                <input type="number" id="revenue" class="field" placeholder="0.00" oninput="calculate()">
-                <label>Μπουρμπουάρ (€)</label>
-                <input type="number" id="tip" class="field" placeholder="0.00" oninput="calculate()">
-                <label>Έξοδα (€)</label>
-                <input type="number" id="expenses" class="field" placeholder="0.00" oninput="calculate()">
-                <hr>
-                <h3 style="color:var(--ok)">Καθαρά: <span id="netResult">0.00</span> €</h3>
-                <button class="btn btn-main" onclick="handleSave()">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
-            </div>
+    <div id="view-entry" class="view active">
+      <div class="card">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Σύνολο Τζίρου</div>
+            <div id="ui-total-revenue" class="kpi-value">0,00 €</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Καθαρό Κέρδος</div>
+            <div id="ui-net-profit" class="kpi-value net">0,00 €</div>
+          </div>
         </div>
-
-        <div id="view-history" class="view">
-            <div id="historyList"></div>
+        
+        <div class="input-group">
+          <label>Μετρητά & POS (€)</label>
+          <input type="number" id="revenue" class="field" placeholder="0.00" oninput="doCalc()">
+          
+          <label>Μπουρμπουάρ (€)</label>
+          <input type="number" id="tips" class="field" placeholder="0.00" oninput="doCalc()">
+          
+          <label>Έξοδα (Καύσιμα κτλ) (€)</label>
+          <input type="number" id="expenses" class="field" placeholder="0.00" oninput="doCalc()">
+          
+          <button class="btn btn-primary" style="margin-top: 20px;" onclick="doSave()">💾 ΑΠΟΘΗΚΕΥΣΗ ΗΜΕΡΑΣ</button>
         </div>
-
-        <div id="view-settings" class="view">
-            <div class="card">
-                <p id="syncStatus">Κατάσταση: 🔴 Offline</p>
-                <button class="btn btn-ghost" onclick="DriveSync.signIn()">🔑 Σύνδεση Google</button>
-                <button class="btn btn-ghost" onclick="DriveSync.syncNow()">🔄 Συγχρονισμός</button>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <div class="nav">
-        <div class="nav-item active" onclick="switchView('entry', this)">Εγγραφή</div>
-        <div class="nav-item" onclick="switchView('history', this)">Ιστορικό</div>
-        <div class="nav-item" onclick="switchView('settings', this)">Cloud</div>
+    <div id="view-history" class="view">
+      <div class="card">
+        <div class="card-header">Ιστορικό</div>
+        <div id="history-container"></div>
+      </div>
     </div>
 
-    <script>
-        // --- 1. DATABASE LOGIC (TaxiDB) ---
-        const TaxiDB = {
-            dbName: "TaxiDB",
-            open: () => new Promise((res, rej) => {
-                const req = indexedDB.open("TaxiDB", 1);
-                req.onupgradeneeded = () => req.result.createObjectStore("days", {keyPath: "date"});
-                req.onsuccess = () => res(req.result);
-            }),
-            save: async (day) => {
-                const db = await TaxiDB.open();
-                const tx = db.transaction("days", "readwrite");
-                tx.objectStore("days").put(day);
-                return new Promise(res => tx.oncomplete = res);
-            },
-            getAll: async () => {
-                const db = await TaxiDB.open();
-                return new Promise(res => {
-                    db.transaction("days").objectStore("days").getAll().onsuccess = (e) => res(e.target.result);
-                });
-            }
-        };
+    <div id="view-cloud" class="view">
+      <div class="card">
+        <div class="card-header">Google Drive Sync</div>
+        <div style="padding: 20px; text-align: center;">
+          <div id="sync-status" style="margin-bottom: 20px; font-weight: 800; color: var(--danger);">🔴 ΑΠΟΣΥΝΔΕΔΕΜΕΝΟ</div>
+          <button class="btn btn-ghost" onclick="DriveSync.signIn()">🔑 Σύνδεση Google</button>
+          <button class="btn btn-ghost" onclick="DriveSync.syncNow()">🔄 Συγχρονισμός Τώρα</button>
+        </div>
+      </div>
+    </div>
 
-        // --- 2. APP LOGIC ---
-        function calculate() {
-            const rev = parseFloat(document.getElementById('revenue').value) || 0;
-            const tip = parseFloat(document.getElementById('tip').value) || 0;
-            const exp = parseFloat(document.getElementById('expenses').value) || 0;
-            document.getElementById('netResult').textContent = (rev + tip - exp).toFixed(2);
-        }
+  </div>
 
-        async function handleSave() {
-            const day = {
-                date: document.getElementById('dateInput').value,
-                revenue: parseFloat(document.getElementById('revenue').value) || 0,
-                tip: parseFloat(document.getElementById('tip').value) || 0,
-                expenses: parseFloat(document.getElementById('expenses').value) || 0,
-                net: parseFloat(document.getElementById('netResult').textContent)
-            };
-            await TaxiDB.save(day);
-            alert("Αποθηκεύτηκε! ✅");
-        }
+  <nav class="nav-bar">
+    <div class="nav-item active" onclick="goTab('entry', this)">
+      <span class="nav-icon">📝</span>Εγγραφή
+    </div>
+    <div class="nav-item" onclick="goTab('history', this)">
+      <span class="nav-icon">📊</span>Ιστορικό
+    </div>
+    <div class="nav-item" onclick="goTab('cloud', this)">
+      <span class="nav-icon">☁️</span>Cloud
+    </div>
+  </nav>
 
-        function switchView(viewId, el) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
-            el.classList.add('active');
-            if(viewId === 'history') loadHistory();
-        }
+  <script>
+    // --- DATABASE ---
+    const DB = {
+      open: () => new Promise(res => {
+        const req = indexedDB.open("TaxiStorage", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("records", {keyPath: "date"});
+        req.onsuccess = () => res(req.result);
+      }),
+      put: async (data) => {
+        const db = await DB.open();
+        const tx = db.transaction("records", "readwrite");
+        tx.objectStore("records").put(data);
+      },
+      get: async () => {
+        const db = await DB.open();
+        return new Promise(res => {
+          db.transaction("records").objectStore("records").getAll().onsuccess = (e) => res(e.target.result);
+        });
+      }
+    };
 
-        async function loadHistory() {
-            const all = await TaxiDB.getAll();
-            const list = document.getElementById('historyList');
-            list.innerHTML = all.map(d => `<div class="history-item"><span>${d.date}</span><b>${d.net.toFixed(2)}€</b></div>`).join('');
-        }
+    // --- APP LOGIC ---
+    function doCalc() {
+      const r = parseFloat(document.getElementById('revenue').value) || 0;
+      const t = parseFloat(document.getElementById('tips').value) || 0;
+      const e = parseFloat(document.getElementById('expenses').value) || 0;
+      const total = r + t;
+      const net = total - e;
+      document.getElementById('ui-total-revenue').innerText = total.toFixed(2) + " €";
+      document.getElementById('ui-net-profit').innerText = net.toFixed(2) + " €";
+    }
 
-        document.getElementById('dateInput').value = new Date().toISOString().slice(0,10);
+    async function doSave() {
+      const data = {
+        date: document.getElementById('dateInput').value,
+        rev: parseFloat(document.getElementById('revenue').value) || 0,
+        tip: parseFloat(document.getElementById('tips').value) || 0,
+        exp: parseFloat(document.getElementById('expenses').value) || 0,
+        net: parseFloat(document.getElementById('ui-net-profit').innerText)
+      };
+      await DB.put(data);
+      alert("Επιτυχής Αποθήκευση! ✅");
+    }
 
-        // --- 3. DRIVE SYNC LOGIC ---
-        const DriveSync = {
-            accessToken: null,
-            signIn: () => {
-                const client = google.accounts.oauth2.initTokenClient({
-                    client_id: "103553412574-688m910d6596u03b60i4qis7p1f03t5n.apps.googleusercontent.com",
-                    scope: "https://www.googleapis.com/auth/drive.appdata",
-                    callback: (resp) => {
-                        DriveSync.accessToken = resp.access_token;
-                        document.getElementById('syncStatus').innerText = "Κατάσταση: 🟢 Online";
-                    }
-                });
-                client.requestAccessToken();
-            },
-            syncNow: async () => {
-                if(!DriveSync.accessToken) return alert("Συνδεθείτε πρώτα!");
-                alert("Συγχρονισμός σε εξέλιξη...");
-                // Εδώ μπαίνει το API call της Google
-            }
-        };
-    </script>
+    function goTab(id, el) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('view-' + id).classList.add('active');
+      el.classList.add('active');
+      if(id === 'history') updateHistory();
+    }
+
+    async function updateHistory() {
+      const all = await DB.get();
+      const cont = document.getElementById('history-container');
+      cont.innerHTML = all.sort((a,b) => b.date.localeCompare(a.date)).map(d => `
+        <div class="history-card">
+          <div><b>${d.date}</b><br><small style="color:var(--muted)">Τζίρος: ${d.rev}€</small></div>
+          <div style="font-weight:900; color:var(--ok)">${d.net.toFixed(2)}€</div>
+        </div>
+      `).join('');
+    }
+
+    // --- DRIVE SYNC ---
+    const DriveSync = {
+      token: null,
+      signIn: () => {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: "103553412574-688m910d6596u03b60i4qis7p1f03t5n.apps.googleusercontent.com",
+          scope: "https://www.googleapis.com/auth/drive.appdata",
+          callback: (r) => { 
+            DriveSync.token = r.access_token;
+            document.getElementById('sync-status').innerText = "🟢 ΣΥΝΔΕΔΕΜΕΝΟ";
+            document.getElementById('sync-status').style.color = "var(--ok)";
+          }
+        });
+        client.requestAccessToken();
+      },
+      syncNow: () => alert("Συγχρονισμός σε εξέλιξη...")
+    };
+
+    document.getElementById('dateInput').value = new Date().toISOString().slice(0,10);
+  </script>
 </body>
 </html>
