@@ -9,6 +9,11 @@ const DriveSync = (() => {
   let accessToken = localStorage.getItem("google_drive_token") || null;
 
   function init() {
+    if (typeof google === 'undefined') {
+      setTimeout(init, 500); // Ξαναδοκίμασε σε μισό δευτερόλεπτο αν η Google δεν είναι έτοιμη
+      return;
+    }
+
     try {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
@@ -17,8 +22,8 @@ const DriveSync = (() => {
           if (resp.error) return;
           accessToken = resp.access_token;
           localStorage.setItem("google_drive_token", accessToken);
-          localStorage.setItem("google_token_expiry", Date.now() + (resp.expires_in * 1000));
           if (window.paintSyncUI) window.paintSyncUI();
+          syncNow(); // Ξεκίνα το sync αμέσως μετά το login
         },
       });
 
@@ -33,8 +38,11 @@ const DriveSync = (() => {
   }
 
   function signIn() {
-    if (!tokenClient) init();
-    // Ζητάει νέο token αν το παλιό έληξε
+    if (!tokenClient) {
+      alert("Η υπηρεσία Google Drive φορτώνει... Δοκίμασε σε 2 δευτερόλεπτα.");
+      init();
+      return;
+    }
     tokenClient.requestAccessToken({ prompt: accessToken ? '' : 'select_account' });
   }
 
@@ -46,6 +54,11 @@ const DriveSync = (() => {
 
     try {
       const data = await TaxiDB.getAllDays();
+      if (!data.length) {
+        alert("Δεν υπάρχουν δεδομένα για συγχρονισμό.");
+        return;
+      }
+
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       
       const res = await gapi.client.drive.files.list({
@@ -53,7 +66,8 @@ const DriveSync = (() => {
         spaces: 'appDataFolder'
       });
 
-      const fileId = res.result.files.length > 0 ? res.result.files[0].id : null;
+      const files = res.result.files;
+      const fileId = files.length > 0 ? files[0].id : null;
 
       if (fileId) {
         await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
@@ -69,24 +83,4 @@ const DriveSync = (() => {
 
         await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${accessToken}` },
-          body: form
-        });
-      }
-      alert("Ο συγχρονισμός πέτυχε! ✅");
-    } catch (e) {
-      if (e.status === 401) { // Αν έληξε το token
-        accessToken = null;
-        localStorage.removeItem("google_drive_token");
-        signIn(); 
-      }
-    }
-  }
-
-  function getState() {
-    return { accessToken, enabled: true };
-  }
-
-  setTimeout(init, 1000);
-  return { signIn, syncNow, getState };
-})();
+          headers: { '
