@@ -89,4 +89,83 @@
             <div class="kpi"><div class="label">Τζίρος</div><div id="kpiRevenue" class="val">0,00 €</div></div>
             <div class="kpi"><div class="label">Extras</div><div id="kpiExtras" class="val">0,00 €</div></div>
             <div class="kpi"><div class="label">Σύνολο</div><div id="kpiTotal" class="val">0,00 €</div></div>
-            <div class="kpi net"><div class="label">Καθαρά</div><div id="kpiNet" class="val">0,0
+            <div class="kpi net"><div class="label">Καθαρά</div><div id="kpiNet" class="val">0,00 €</div></div>
+          </div>
+
+          <label class="fieldLabel">Τζίρος (€)</label>
+          <input id="revenue" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+          
+          <label class="fieldLabel">Μπουρμπουάρ (€)</label>
+          <input id="tip1" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+          
+          <label class="fieldLabel">Άλλα / Extras (€)</label>
+          <input id="tip2" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+
+          <label class="fieldLabel">Έξοδα (€)</label>
+          <input id="expensesTotal" class="field" readonly value="0.00">
+          <button id="addExpenseBtn" class="btn ghost" style="margin-top:8px; font-size:14px">+ Προσθήκη Εξόδου</button>
+          <div id="expensesList" style="margin-top:12px"></div>
+
+          <label class="fieldLabel">Σημειώσεις</label>
+          <textarea id="note" class="field" rows="2" placeholder="..."></textarea>
+
+          <button id="saveBtn" class="btn primary" style="margin-top:20px">💾 ΑΠΟΘΗΚΕΥΣΗ ΗΜΕΡΑΣ</button>
+        </div>
+      </div>
+    </main>
+
+    <section id="view-history" class="view">
+      <div class="card">
+        <div class="cardTitle">Ιστορικό Εγγραφών</div>
+        <div class="cardInner" id="historyList">
+          </div>
+      </div>
+    </section>
+
+    <section id="view-summary" class="view">
+      <div class="card">
+        <div class="cardTitle">Στατιστικά</div>
+        <div class="cardInner">
+          <div class="pill"><span>Σύνολο Ημερών</span> <span id="sumDays">0</span></div>
+          <div class="pill"><span>Συνολικός Τζίρος</span> <span id="sumRevenue">0,00 €</span></div>
+          <div class="pill"><span>Σύνολο Extras</span> <span id="sumTips">0,00 €</span></div>
+          <div class="pill"><span>Σύνολο Εξόδων</span> <span id="sumExpenses" style="color:var(--danger)">0,00 €</span></div>
+          <div class="pill" style="background:var(--ok); color:#000; margin-top:10px; font-weight:900">
+            <span>ΚΑΘΑΡΟ ΚΕΡΔΟΣ</span> <span id="sumNet">0,00 €</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="card">
+        <div class="cardTitle">☁️ Google Drive Cloud</div>
+        <div class="cardInner">
+          <div id="syncState" class="pill" style="justify-content:center; font-weight:bold; color:var(--danger)">🔴 Offline</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px">
+            <button id="syncLoginBtn" class="btn ghost">🔑 Σύνδεση</button>
+            <button id="syncBtn" class="btn ghost">🔄 Sync Τώρα</button>
+          </div>
+          <p style="font-size:11px; color:var(--muted); text-align:center; margin-top:15px">
+            Τα δεδομένα αποθηκεύονται με ασφάλεια στο Google Drive σας.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <nav class="tabs">
+    <div class="tab active" onclick="uiShowTab('entry')">Εγγραφή</div>
+    <div class="tab" onclick="uiShowTab('history')">Ιστορικό</div>
+    <div class="tab" onclick="uiShowTab('summary')">Στατιστικά</div>
+    <div class="tab" onclick="uiShowTab('settings')">Cloud</div>
+  </nav>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="./db.js"></script>
+  <script src="./driveSync.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
