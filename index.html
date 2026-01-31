@@ -1,171 +1,147 @@
 <!doctype html>
 <html lang="el">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1020" />
-  <title>Taxi Ledger Pro</title>
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <script src="https://accounts.google.com/gsi/client"></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-
-  <style>
-    :root {
-      --bg: #070a14; --card: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.10); --text: #eef3ff;
-      --muted: rgba(238,243,255,.66); --accent: #6aa7ff;
-      --accent2: #7c5cff; --ok: #34d399; --danger: #ff5b7a;
-      --r24: 24px;
-    }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; color: var(--text); font-family: system-ui, sans-serif; background: var(--bg); overflow-x: hidden; }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Taxi Ledger Pro</title>
     
-    /* Background Glow */
-    .bg { position: fixed; inset: 0; z-index: -2; background: radial-gradient(1200px 700px at 18% -12%, rgba(106,167,255,.2), transparent 60%), linear-gradient(180deg, #050712 0%, #070a14 100%); }
-    
-    .wrap { max-width: 980px; margin: 0 auto; padding: 18px 14px calc(100px + env(safe-area-inset-bottom)); }
-    
-    .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .logo { width: 44px; height: 44px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-weight: 900; }
-    
-    .datePill { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 99px; background: var(--card); border: 1px solid var(--stroke); }
-    input[type="date"] { background: transparent; border: none; color: white; font-weight: 800; outline: none; font-size: 16px; }
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
 
-    .card { background: var(--card); border: 1px solid var(--stroke); border-radius: var(--r24); overflow: hidden; backdrop-filter: blur(15px); margin-bottom: 12px; }
-    .cardTitle { padding: 14px; background: rgba(0,0,0,0.15); border-bottom: 1px solid var(--stroke); font-weight: 800; display: flex; justify-content: space-between; }
-    .cardInner { padding: 14px; }
-
-    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .kpi { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 20px; border: 1px solid var(--stroke); }
-    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
-    .kpi .val { font-size: 19px; font-weight: 900; margin-top: 4px; }
-    .kpi.net .val { color: var(--ok); }
-
-    .fieldLabel { font-size: 12px; color: var(--muted); font-weight: 800; margin: 12px 2px 6px; display: block; }
-    .field { width: 100%; padding: 14px; border-radius: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--stroke); color: white; outline: none; font-size: 16px; margin-bottom: 5px; }
-    
-    .btn { width: 100%; padding: 15px; border-radius: 18px; border: 1px solid var(--stroke); font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-    .btn:active { transform: scale(0.96); opacity: 0.8; }
-    .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; }
-    .btn.ghost { background: rgba(255,255,255,0.05); color: white; }
-    .btn.danger { background: rgba(255,91,122,0.1); color: var(--danger); border-color: rgba(255,91,122,0.2); }
-
-    .expense-item { display: grid; grid-template-columns: 1fr 90px 44px; gap: 8px; margin-bottom: 8px; }
-    .miniBtn { border-radius: 12px; border: 1px solid var(--danger); background: rgba(255,91,122,0.15); color: var(--danger); cursor: pointer; }
-
-    /* History & Summary Items */
-    .pill { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 14px; border: 1px solid var(--stroke); display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .historyItem { padding: 14px; border: 1px solid var(--stroke); border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(255,255,255,0.03); cursor: pointer; }
-
-    /* Bottom Tabs */
-    .tabs { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,10,20,0.85); backdrop-filter: blur(25px); padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100; }
-    .tab { flex: 1; padding: 12px; border-radius: 16px; border: none; background: transparent; color: var(--muted); font-weight: 800; cursor: pointer; text-align: center; }
-    .tab.active { background: rgba(106,167,255,0.12); color: var(--accent); }
-
-    .view { display: none; animation: fadeIn 0.3s ease; }
-    .view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 100px; background: #000; color: white; padding: 12px 24px; border-radius: 14px; border: 1px solid var(--stroke); display: none; z-index: 2000; font-weight: bold; }
-  </style>
+    <style>
+        :root { --bg: #070a14; --text: #eef3ff; --accent: #6aa7ff; --ok: #34d399; --danger: #ff5b7a; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; padding-bottom: 80px; }
+        .wrap { padding: 20px; max-width: 500px; margin: auto; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
+        .field { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-ghost { background: #222; color: #ccc; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #0a0a0a; border-top: 1px solid #333; }
+        .nav-item { flex: 1; padding: 20px; text-align: center; cursor: pointer; opacity: 0.6; }
+        .nav-item.active { opacity: 1; color: var(--accent); border-top: 2px solid var(--accent); }
+        .view { display: none; }
+        .view.active { display: block; }
+        .history-item { border-bottom: 1px solid #222; padding: 10px 0; display: flex; justify-content: space-between; }
+    </style>
 </head>
 <body>
-  <div class="bg"></div>
-  <div class="wrap">
-    
-    <header class="appbar">
-      <div class="logo">TL</div>
-      <div class="datePill">📅 <input id="dateInput" type="date"></div>
-    </header>
+    <div class="wrap">
+        <h2 id="pageTitle">Νέα Εγγραφή</h2>
+        <input type="date" id="dateInput" class="field">
 
-    <main id="view-entry" class="view active">
-      <div class="card">
-        <div class="cardTitle">Νέα Εγγραφή <span id="syncIndicator" style="font-size:10px; color:var(--muted)">●</span></div>
-        <div class="cardInner">
-          <div class="kpis">
-            <div class="kpi"><div class="label">Τζίρος</div><div id="kpiRevenue" class="val">0,00 €</div></div>
-            <div class="kpi"><div class="label">Extras</div><div id="kpiExtras" class="val">0,00 €</div></div>
-            <div class="kpi"><div class="label">Σύνολο</div><div id="kpiTotal" class="val">0,00 €</div></div>
-            <div class="kpi net"><div class="label">Καθαρά</div><div id="kpiNet" class="val">0,00 €</div></div>
-          </div>
-
-          <label class="fieldLabel">Τζίρος (€)</label>
-          <input id="revenue" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
-          
-          <label class="fieldLabel">Μπουρμπουάρ (€)</label>
-          <input id="tip1" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
-          
-          <label class="fieldLabel">Άλλα / Extras (€)</label>
-          <input id="tip2" class="field" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
-
-          <label class="fieldLabel">Έξοδα (€)</label>
-          <input id="expensesTotal" class="field" readonly value="0.00">
-          <button id="addExpenseBtn" class="btn ghost" style="margin-top:8px; font-size:14px">+ Προσθήκη Εξόδου</button>
-          <div id="expensesList" style="margin-top:12px"></div>
-
-          <label class="fieldLabel">Σημειώσεις</label>
-          <textarea id="note" class="field" rows="2" placeholder="..."></textarea>
-
-          <button id="saveBtn" class="btn primary" style="margin-top:20px">💾 ΑΠΟΘΗΚΕΥΣΗ ΗΜΕΡΑΣ</button>
+        <div id="view-entry" class="view active">
+            <div class="card">
+                <label>Τζίρος (€)</label>
+                <input type="number" id="revenue" class="field" placeholder="0.00" oninput="calculate()">
+                <label>Μπουρμπουάρ (€)</label>
+                <input type="number" id="tip" class="field" placeholder="0.00" oninput="calculate()">
+                <label>Έξοδα (€)</label>
+                <input type="number" id="expenses" class="field" placeholder="0.00" oninput="calculate()">
+                <hr>
+                <h3 style="color:var(--ok)">Καθαρά: <span id="netResult">0.00</span> €</h3>
+                <button class="btn btn-main" onclick="handleSave()">💾 ΑΠΟΘΗΚΕΥΣΗ</button>
+            </div>
         </div>
-      </div>
-    </main>
 
-    <section id="view-history" class="view">
-      <div class="card">
-        <div class="cardTitle">Ιστορικό Εγγραφών</div>
-        <div class="cardInner" id="historyList">
-          </div>
-      </div>
-    </section>
-
-    <section id="view-summary" class="view">
-      <div class="card">
-        <div class="cardTitle">Στατιστικά</div>
-        <div class="cardInner">
-          <div class="pill"><span>Σύνολο Ημερών</span> <span id="sumDays">0</span></div>
-          <div class="pill"><span>Συνολικός Τζίρος</span> <span id="sumRevenue">0,00 €</span></div>
-          <div class="pill"><span>Σύνολο Extras</span> <span id="sumTips">0,00 €</span></div>
-          <div class="pill"><span>Σύνολο Εξόδων</span> <span id="sumExpenses" style="color:var(--danger)">0,00 €</span></div>
-          <div class="pill" style="background:var(--ok); color:#000; margin-top:10px; font-weight:900">
-            <span>ΚΑΘΑΡΟ ΚΕΡΔΟΣ</span> <span id="sumNet">0,00 €</span>
-          </div>
+        <div id="view-history" class="view">
+            <div id="historyList"></div>
         </div>
-      </div>
-    </section>
 
-    <section id="view-settings" class="view">
-      <div class="card">
-        <div class="cardTitle">☁️ Google Drive Cloud</div>
-        <div class="cardInner">
-          <div id="syncState" class="pill" style="justify-content:center; font-weight:bold; color:var(--danger)">🔴 Offline</div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px">
-            <button id="syncLoginBtn" class="btn ghost">🔑 Σύνδεση</button>
-            <button id="syncBtn" class="btn ghost">🔄 Sync Τώρα</button>
-          </div>
-          <p style="font-size:11px; color:var(--muted); text-align:center; margin-top:15px">
-            Τα δεδομένα αποθηκεύονται με ασφάλεια στο Google Drive σας.
-          </p>
+        <div id="view-settings" class="view">
+            <div class="card">
+                <p id="syncStatus">Κατάσταση: 🔴 Offline</p>
+                <button class="btn btn-ghost" onclick="DriveSync.signIn()">🔑 Σύνδεση Google</button>
+                <button class="btn btn-ghost" onclick="DriveSync.syncNow()">🔄 Συγχρονισμός</button>
+            </div>
         </div>
-      </div>
-    </section>
+    </div>
 
-  </div>
+    <div class="nav">
+        <div class="nav-item active" onclick="switchView('entry', this)">Εγγραφή</div>
+        <div class="nav-item" onclick="switchView('history', this)">Ιστορικό</div>
+        <div class="nav-item" onclick="switchView('settings', this)">Cloud</div>
+    </div>
 
-  <nav class="tabs">
-    <div class="tab active" onclick="uiShowTab('entry')">Εγγραφή</div>
-    <div class="tab" onclick="uiShowTab('history')">Ιστορικό</div>
-    <div class="tab" onclick="uiShowTab('summary')">Στατιστικά</div>
-    <div class="tab" onclick="uiShowTab('settings')">Cloud</div>
-  </nav>
+    <script>
+        // --- 1. DATABASE LOGIC (TaxiDB) ---
+        const TaxiDB = {
+            dbName: "TaxiDB",
+            open: () => new Promise((res, rej) => {
+                const req = indexedDB.open("TaxiDB", 1);
+                req.onupgradeneeded = () => req.result.createObjectStore("days", {keyPath: "date"});
+                req.onsuccess = () => res(req.result);
+            }),
+            save: async (day) => {
+                const db = await TaxiDB.open();
+                const tx = db.transaction("days", "readwrite");
+                tx.objectStore("days").put(day);
+                return new Promise(res => tx.oncomplete = res);
+            },
+            getAll: async () => {
+                const db = await TaxiDB.open();
+                return new Promise(res => {
+                    db.transaction("days").objectStore("days").getAll().onsuccess = (e) => res(e.target.result);
+                });
+            }
+        };
 
-  <div id="toast" class="toast"></div>
+        // --- 2. APP LOGIC ---
+        function calculate() {
+            const rev = parseFloat(document.getElementById('revenue').value) || 0;
+            const tip = parseFloat(document.getElementById('tip').value) || 0;
+            const exp = parseFloat(document.getElementById('expenses').value) || 0;
+            document.getElementById('netResult').textContent = (rev + tip - exp).toFixed(2);
+        }
 
-  <script src="./db.js"></script>
-  <script src="./driveSync.js"></script>
-  <script src="./app.js"></script>
+        async function handleSave() {
+            const day = {
+                date: document.getElementById('dateInput').value,
+                revenue: parseFloat(document.getElementById('revenue').value) || 0,
+                tip: parseFloat(document.getElementById('tip').value) || 0,
+                expenses: parseFloat(document.getElementById('expenses').value) || 0,
+                net: parseFloat(document.getElementById('netResult').textContent)
+            };
+            await TaxiDB.save(day);
+            alert("Αποθηκεύτηκε! ✅");
+        }
+
+        function switchView(viewId, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            el.classList.add('active');
+            if(viewId === 'history') loadHistory();
+        }
+
+        async function loadHistory() {
+            const all = await TaxiDB.getAll();
+            const list = document.getElementById('historyList');
+            list.innerHTML = all.map(d => `<div class="history-item"><span>${d.date}</span><b>${d.net.toFixed(2)}€</b></div>`).join('');
+        }
+
+        document.getElementById('dateInput').value = new Date().toISOString().slice(0,10);
+
+        // --- 3. DRIVE SYNC LOGIC ---
+        const DriveSync = {
+            accessToken: null,
+            signIn: () => {
+                const client = google.accounts.oauth2.initTokenClient({
+                    client_id: "103553412574-688m910d6596u03b60i4qis7p1f03t5n.apps.googleusercontent.com",
+                    scope: "https://www.googleapis.com/auth/drive.appdata",
+                    callback: (resp) => {
+                        DriveSync.accessToken = resp.access_token;
+                        document.getElementById('syncStatus').innerText = "Κατάσταση: 🟢 Online";
+                    }
+                });
+                client.requestAccessToken();
+            },
+            syncNow: async () => {
+                if(!DriveSync.accessToken) return alert("Συνδεθείτε πρώτα!");
+                alert("Συγχρονισμός σε εξέλιξη...");
+                // Εδώ μπαίνει το API call της Google
+            }
+        };
+    </script>
 </body>
 </html>
