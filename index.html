@@ -4,567 +4,271 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1020" />
-  <title>Taxi Ledger</title>
-  <link rel="manifest" href="./manifest.webmanifest" />
-
-  <!-- Google Identity Services (OAuth token) -->
+  <title>Taxi Ledger Pro</title>
+  
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- Google API client -->
   <script src="https://apis.google.com/js/api.js" async defer></script>
-
+  
   <style>
-    /* ----------------------------
-      PRO UI THEME (2026)
-    ---------------------------- */
-    :root{
-      --bg:#070a14;
-      --bg2:#0a1022;
+    :root {
+      --bg: #070a14;
+      --bg2: #0a1022;
       --card: rgba(255,255,255,.06);
-      --card2: rgba(255,255,255,.09);
       --stroke: rgba(255,255,255,.10);
-      --stroke2: rgba(255,255,255,.14);
       --text: #eef3ff;
       --muted: rgba(238,243,255,.66);
-      --muted2: rgba(238,243,255,.48);
       --accent: #6aa7ff;
-      --accent2:#7c5cff;
-      --ok:#34d399;
-      --warn:#fbbf24;
-      --danger:#ff5b7a;
-
-      --r12: 12px;
-      --r16: 16px;
+      --accent2: #7c5cff;
+      --danger: #ff5b7a;
       --r20: 20px;
       --r24: 24px;
-
       --shadow: 0 18px 50px rgba(0,0,0,.45);
-      --shadow2: 0 10px 28px rgba(0,0,0,.35);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: var(--bg);
-      overflow-x:hidden;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); overflow-x: hidden; min-height: 100vh;
     }
 
-    /* ✅ Background fix:
-       - fixed layer + gradient + subtle noise
-       - no seams on scroll
-    */
-    .bg{
-      position: fixed;
-      inset: 0;
-      z-index:-2;
-      background:
-        radial-gradient(1200px 700px at 18% -12%, rgba(106,167,255,.28), transparent 62%),
-        radial-gradient(1000px 700px at 88% 2%, rgba(124,92,255,.22), transparent 62%),
-        radial-gradient(900px 600px at 70% 110%, rgba(52,211,153,.12), transparent 60%),
-        linear-gradient(180deg, #050712 0%, #070a14 30%, #0a1022 100%);
-      transform: translateZ(0);
-    }
-    .bg::after{
-      content:"";
-      position:absolute; inset:0;
-      background-image:
-        radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-      background-size: 3px 3px;
-      opacity: .07;
-      mix-blend-mode: overlay;
-      pointer-events:none;
+    /* Background Layer */
+    .bg {
+      position: fixed; inset: 0; z-index: -1;
+      background: 
+        radial-gradient(1200px 700px at 18% -12%, rgba(106,167,255,.2), transparent 60%),
+        radial-gradient(1000px 700px at 88% 2%, rgba(124,92,255,.15), transparent 60%),
+        linear-gradient(180deg, #050712 0%, #070a14 100%);
     }
 
-    .wrap{
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 18px 14px calc(92px + env(safe-area-inset-bottom));
+    .wrap {
+      max-width: 980px; margin: 0 auto;
+      padding: 20px 16px calc(100px + env(safe-area-inset-bottom));
     }
 
-    /* Top App Bar */
-    .appbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom: 14px;
+    /* App Bar */
+    .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center; font-weight: 900;
+      box-shadow: 0 8px 20px rgba(106,167,255,0.3);
     }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width:0;
+    .brand h1 { font-size: 20px; margin: 0; }
+    .brand p { font-size: 12px; margin: 0; color: var(--muted); }
+
+    .date-input-wrap {
+      background: var(--card); border: 1px solid var(--stroke);
+      padding: 8px 12px; border-radius: 99px; display: flex; align-items: center; gap: 8px;
     }
-    .logo{
-      width:44px; height:44px;
-      border-radius: 16px;
-      background:
-        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.35), transparent 60%),
-        linear-gradient(135deg, rgba(106,167,255,.85), rgba(124,92,255,.85));
-      box-shadow: 0 18px 40px rgba(106,167,255,.18);
-      border:1px solid rgba(255,255,255,.12);
-      display:grid; place-items:center;
-      font-weight: 1000;
-    }
-    .brand h1{
-      margin:0;
-      font-size: 22px;
-      letter-spacing: .2px;
-      line-height:1.1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .brand .sub{
-      margin-top:4px;
-      color: var(--muted);
-      font-size: 12.5px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+    input[type="date"] {
+      background: transparent; border: none; color: var(--text); font-weight: bold; outline: none;
     }
 
-    .datePill{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      box-shadow: var(--shadow2);
-    }
-    .datePill span{opacity:.9}
-    input[type="date"]{
-      background: transparent;
-      color: var(--text);
-      border: none;
-      outline: none;
-      font-weight: 800;
-      font-size: 14px;
-    }
+    /* Cards & Grid */
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media(min-width: 800px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
 
-    /* Layout */
-    .grid{
-      display:grid;
-      gap: 12px;
+    .card {
+      background: var(--card); border: 1px solid var(--stroke);
+      border-radius: var(--r24); overflow: hidden; backdrop-filter: blur(10px);
     }
-    @media(min-width: 780px){
-      .grid{
-        grid-template-columns: 1.1fr .9fr;
-        align-items:start;
-      }
-    }
+    .card-header { padding: 16px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
+    .card-body { padding: 16px; }
 
-    .card{
-      border: 1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      border-radius: var(--r24);
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    /* Inputs */
+    .field-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .field {
+      width: 100%; padding: 14px; border-radius: 16px;
+      background: rgba(0,0,0,0.3); border: 1px solid var(--stroke);
+      color: white; font-size: 16px; outline: none; transition: 0.2s;
     }
-    .cardInner{
-      padding: 14px;
-    }
-    .cardTitle{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 14px;
-      border-bottom:1px solid var(--stroke);
-      background: rgba(0,0,0,.10);
-    }
-    .cardTitle .t{
-      font-weight: 1000;
-      letter-spacing:.2px;
-    }
-    .badge{
-      font-size: 12px;
-      color: var(--muted);
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.05);
-      padding: 6px 10px;
-      border-radius: 999px;
-      white-space:nowrap;
-    }
+    .field:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(106,167,255,0.1); }
+    .field[readonly] { opacity: 0.6; cursor: not-allowed; }
 
     /* KPIs */
-    .kpis{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .kpi{
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
-      border-radius: var(--r20);
-      padding: 12px;
-    }
-    .kpi .label{color: var(--muted); font-size: 12px}
-    .kpi .val{margin-top:6px; font-size: 22px; font-weight: 1000}
-    .kpi.net .val{color: rgba(52,211,153,.95)}
-    .kpi.total .val{color: rgba(106,167,255,.95)}
-
-    /* Fields */
-    .fieldLabel{
-      margin: 12px 2px 6px;
-      color: var(--muted);
-      font-size: 12.5px;
-      font-weight: 800;
-    }
-    .field{
-      width:100%;
-      padding: 14px 14px;
-      border-radius: var(--r20);
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.14);
-      color: var(--text);
-      outline:none;
-      font-size: 16px;
-      font-weight: 800;
-    }
-    .field:focus{
-      border-color: rgba(106,167,255,.55);
-      box-shadow: 0 0 0 4px rgba(106,167,255,.14);
-    }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .kpi { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 16px; border: 1px solid var(--stroke); }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .kpi-val { font-size: 18px; font-weight: 900; margin-top: 4px; }
+    .kpi-val.plus { color: #34d399; }
 
     /* Buttons */
-    .btn{
-      width:100%;
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      border-radius: var(--r20);
-      padding: 14px 14px;
-      font-weight: 1000;
-      font-size: 15px;
-      cursor:pointer;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-      position:relative;
-      overflow:hidden;
+    .btn {
+      width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--stroke);
+      font-weight: 800; cursor: pointer; transition: transform 0.1s;
+      position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .btn:active{transform: translateY(1px)}
-    /* nicer ripple-ish */
-    .btn::after{
-      content:"";
-      position:absolute;
-      inset:-40%;
-      background: radial-gradient(circle at var(--x,50%) var(--y,50%), rgba(255,255,255,.18), transparent 45%);
-      opacity:0;
-      transition: opacity .25s ease;
-      pointer-events:none;
-    }
-    .btn:active::after{opacity:1}
-    .btn.primary{
-      border-color: rgba(106,167,255,.35);
-      background: linear-gradient(135deg, rgba(106,167,255,.85), rgba(124,92,255,.75));
-      box-shadow: 0 16px 40px rgba(106,167,255,.18);
-    }
-    .btn.ghost{
-      background: rgba(255,255,255,.05);
-    }
-    .btn.danger{
-      border-color: rgba(255,91,122,.32);
-      background: rgba(255,91,122,.10);
-    }
-    .btnRow{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .btnSmall{
-      padding: 12px 12px;
-      font-size: 13.5px;
-      border-radius: 16px;
-    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
+    .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text); }
+    .btn-danger { background: rgba(255,91,122,0.1); color: var(--danger); border-color: rgba(255,91,122,0.2); }
 
-    /* Expenses */
-    .expense-item{
-      display:grid;
-      grid-template-columns: 1fr 132px 48px;
-      gap:10px;
-      align-items:center;
-      margin: 10px 0;
+    /* Tabs Navigation */
+    .tabs {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(7,10,20,0.8); backdrop-filter: blur(20px);
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100;
     }
-    .miniBtn{
-      width:48px; height:48px;
-      border-radius: 16px;
-      border:1px solid rgba(255,91,122,.28);
-      background: rgba(255,91,122,.10);
-      color: var(--text);
-      font-weight: 1000;
-      cursor:pointer;
+    .tab-btn {
+      flex: 1; padding: 12px; border-radius: 14px; border: none;
+      background: transparent; color: var(--muted); font-weight: 700;
+      cursor: pointer; transition: 0.3s;
     }
-    .miniBtn:active{transform: translateY(1px)}
+    .tab-btn.active { background: rgba(106,167,255,0.15); color: var(--accent); }
 
-    /* Pills */
-    .pill{
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
-      border-radius: 999px;
-      padding: 10px 12px;
-      color: var(--muted);
-      font-size: 12.8px;
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-      align-items:center;
-    }
+    .view { display: none; animation: fadeIn 0.3s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Tabs bottom */
-    .tabs{
-      position: fixed;
-      left:0; right:0; bottom:0;
-      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(5,7,18,.72);
-      backdrop-filter: blur(14px);
-      border-top:1px solid rgba(255,255,255,.10);
-      display:flex;
-      gap:10px;
-      justify-content:center;
-      z-index: 50;
+    /* Ripple Effect */
+    .ripple {
+      position: absolute; border-radius: 50%; transform: scale(0);
+      animation: ripple-animation 0.6s linear; background: rgba(255,255,255,0.3);
     }
-    .tab{
-      flex:1; max-width: 340px;
-      border-radius: 18px;
-      padding: 12px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      color: var(--text);
-      font-weight: 1000;
-      display:flex; align-items:center; justify-content:center; gap:10px;
-    }
-    .tab.active{
-      background: rgba(106,167,255,.16);
-      border-color: rgba(106,167,255,.35);
-      box-shadow: 0 18px 40px rgba(106,167,255,.10);
-    }
-
-    /* Views */
-    .view{display:none}
-    .view.active{display:block}
-
-    /* History items */
-    .historyItem{
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
-      border-radius: var(--r20);
-      padding: 12px;
-      display:flex;
-      justify-content:space-between;
-      gap: 12px;
-      cursor:pointer;
-      transition: transform .08s ease;
-    }
-    .historyItem:active{transform: translateY(1px)}
-    .historyMeta{color:var(--muted); font-size:12px; margin-top:6px; line-height:1.25}
-    .historyNet{font-weight:1000; white-space:nowrap}
-
-    /* Toast */
-    .toast{
-      position: fixed;
-      left:50%; transform:translateX(-50%);
-      bottom: 92px;
-      background: rgba(0,0,0,.68);
-      border: 1px solid rgba(255,255,255,.12);
-      padding: 10px 12px;
-      border-radius: 14px;
-      font-weight: 900;
-      display:none;
-      z-index: 9999;
-      max-width: calc(100% - 24px);
-      text-align:center;
-    }
+    @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
   </style>
-
-  <script defer src="./db.js"></script>
-  <script defer src="./drive-sync.js"></script>
-  <script defer src="./app.js"></script>
 </head>
 
 <body>
-  <div class="bg" aria-hidden="true"></div>
+  <div class="bg"></div>
 
   <div class="wrap">
-    <!-- App Bar -->
-    <div class="appbar">
+    <header class="appbar">
       <div class="brand">
         <div class="logo">TL</div>
-        <div style="min-width:0">
+        <div>
           <h1>Taxi Ledger</h1>
-          <div class="sub">Τζίρος • Μπουρμπουάρ • Άλλα • Έξοδα</div>
+          <p>Smart Fleet Management</p>
         </div>
       </div>
-
-      <div class="datePill">
+      <div class="date-input-wrap">
         <span>📅</span>
-        <input id="dateInput" type="date" />
+        <input type="date" id="dateInput">
       </div>
-    </div>
+    </header>
 
     <div class="grid">
-      <!-- LEFT: Entry -->
-      <div id="view-entry" class="view active">
+      <section id="view-entry" class="view active">
         <div class="card">
-          <div class="cardTitle">
-            <div class="t">Καταχώρηση</div>
-            <div class="badge">Auto-save: <span id="autosaveState">έτοιμο</span></div>
+          <div class="card-header">
+            <span style="font-weight: 800;">Νέα Καταχώρηση</span>
+            <small id="saveStatus" style="color: var(--muted);">Αναμονή...</small>
           </div>
-
-          <div class="cardInner">
-            <div class="kpis">
+          <div class="card-body">
+            <div class="kpi-grid">
               <div class="kpi">
-                <div class="label">Τζίρος</div>
-                <div id="kpiRevenue" class="val">0,00 €</div>
+                <div class="kpi-label">Σύνολο (€)</div>
+                <div id="kpiTotal" class="kpi-val">0.00</div>
               </div>
               <div class="kpi">
-                <div class="label">Μπουρμπουάρ + Άλλα</div>
-                <div id="kpiExtras" class="val">0,00 €</div>
-              </div>
-              <div class="kpi total">
-                <div class="label">Όλα μαζί</div>
-                <div id="kpiTotal" class="val">0,00 €</div>
-              </div>
-              <div class="kpi net">
-                <div class="label">Καθαρό μετά τα έξοδα</div>
-                <div id="kpiNet" class="val">0,00 €</div>
+                <div class="kpi-label">Καθαρά (€)</div>
+                <div id="kpiNet" class="kpi-val plus">0.00</div>
               </div>
             </div>
 
-            <div class="fieldLabel">Τζίρος (€)</div>
-            <input id="revenue" class="field" inputmode="decimal" type="number" step="0.01" placeholder="π.χ. 250" />
-
-            <div class="fieldLabel">Μπουρμπουάρ (€)</div>
-            <input id="tip1" class="field" inputmode="decimal" type="number" step="0.01" placeholder="π.χ. 25" />
-
-            <div class="fieldLabel">Άλλα (€)</div>
-            <input id="tip2" class="field" inputmode="decimal" type="number" step="0.01" placeholder="π.χ. 50" />
-
-            <div class="fieldLabel">Σύνολο εξόδων (€)</div>
-            <input id="expensesTotal" class="field" type="number" step="0.01" value="0.00" readonly />
-
-            <div style="height:12px"></div>
-            <button id="addExpenseBtn" class="btn ghost"
-              onpointerdown="this.style.setProperty('--x', (event.offsetX||0)+'px'); this.style.setProperty('--y', (event.offsetY||0)+'px');">
-              + Προσθήκη εξόδου
-            </button>
-
-            <div id="expensesList"></div>
-
-            <div class="fieldLabel">Σημειώσεις</div>
-            <input id="note" class="field" placeholder="π.χ. καύσιμα, βροχή, αεροδρόμιο..." />
-
-            <div style="height:12px"></div>
-            <button id="saveBtn" class="btn primary"
-              onpointerdown="this.style.setProperty('--x', (event.offsetX||0)+'px'); this.style.setProperty('--y', (event.offsetY||0)+'px');">
-              💾 Αποθήκευση
-            </button>
-
-            <div style="height:12px"></div>
-
-            <div class="card" style="border-radius:20px; background: rgba(0,0,0,.10); box-shadow:none">
-              <div class="cardTitle" style="border-bottom:1px solid rgba(255,255,255,.10)">
-                <div class="t">Google Drive Sync</div>
-                <div class="badge">backup</div>
-              </div>
-              <div class="cardInner">
-                <div id="syncState" class="pill" style="justify-content:flex-start; gap:10px">
-                  🔴 Offline • ⛔ Sync OFF • 🔓 Google: όχι
-                </div>
-
-                <div style="height:10px"></div>
-
-                <label class="pill" style="cursor:pointer">
-                  <span>✅ Auto-sync (όταν είσαι ήδη συνδεδεμένος)</span>
-                  <input id="syncToggle" type="checkbox" style="transform:scale(1.15)" />
-                </label>
-
-                <div style="height:10px"></div>
-
-                <div class="btnRow">
-                  <button id="syncLoginBtn" class="btn btnSmall"
-                    onpointerdown="this.style.setProperty('--x', (event.offsetX||0)+'px'); this.style.setProperty('--y', (event.offsetY||0)+'px');">
-                    Σύνδεση Google
-                  </button>
-
-                  <button id="syncBtn" class="btn btnSmall"
-                    onpointerdown="this.style.setProperty('--x', (event.offsetX||0)+'px'); this.style.setProperty('--y', (event.offsetY||0)+'px');">
-                    ⏫ Sync τώρα
-                  </button>
-                </div>
-
-                <div style="height:10px"></div>
-
-                <button id="restoreBtn" class="btn btnSmall danger"
-                  onpointerdown="this.style.setProperty('--x', (event.offsetX||0)+'px'); this.style.setProperty('--y', (event.offsetY||0)+'px');">
-                  ⏬ Restore
-                </button>
-
-                <div style="height:10px"></div>
-                <div class="pill" style="font-size:12px; color:var(--muted2)">
-                  <span>Σημείωση</span>
-                  <span>Clear site data = σβήνονται τοπικά. Drive = επαναφορά.</span>
-                </div>
-              </div>
+            <div class="field-group">
+              <label for="revenue">Τζίρος Ταξιμέτρου</label>
+              <input type="number" id="revenue" class="field" inputmode="decimal" placeholder="0.00">
             </div>
 
+            <div class="field-group">
+              <label for="tips">Μπουρμπουάρ & Extras</label>
+              <input type="number" id="tips" class="field" inputmode="decimal" placeholder="0.00">
+            </div>
+
+            <div class="field-group">
+              <label>Έξοδα Ημέρας</label>
+              <input type="number" id="expensesTotal" class="field" readonly value="0.00">
+              <button id="addExpenseBtn" class="btn btn-ghost" style="margin-top: 10px; padding: 10px; font-size: 13px;">
+                + Προσθήκη Εξόδου
+              </button>
+            </div>
+
+            <div id="expenseItems"></div>
+
+            <div class="field-group">
+              <label for="notes">Σημειώσεις</label>
+              <textarea id="notes" class="field" rows="2" placeholder="π.χ. Βροχερή μέρα, κίνηση στην Κηφισίας..."></textarea>
+            </div>
+
+            <button id="saveBtn" class="btn btn-primary">💾 Αποθήκευση Δεδομένων</button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- RIGHT: History / Summary container -->
-      <div>
-        <div id="view-history" class="view">
-          <div class="card">
-            <div class="cardTitle">
-              <div class="t">Ιστορικό</div>
-              <div class="badge">tap για φόρτωση ημέρας</div>
-            </div>
-            <div class="cardInner">
-              <div id="historyList"></div>
-            </div>
+      <section id="view-history" class="view">
+        <div class="card">
+          <div class="card-header"><span style="font-weight: 800;">Ιστορικό</span></div>
+          <div class="card-body" id="historyList">
+            <p style="text-align: center; color: var(--muted);">Δεν υπάρχουν δεδομένα.</p>
           </div>
         </div>
-
-        <div id="view-summary" class="view">
-          <div class="card">
-            <div class="cardTitle">
-              <div class="t">Σύνολα</div>
-              <div class="badge">όλο το διάστημα</div>
-            </div>
-            <div class="cardInner">
-              <div class="pill"><span>Ημέρες</span><span id="sumDays">0</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Τζίρος</span><span id="sumRevenue">0,00 €</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Μπουρμπουάρ</span><span id="sumTip1">0,00 €</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Άλλα</span><span id="sumTip2">0,00 €</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Έξοδα</span><span id="sumExpenses">0,00 €</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Όλα μαζί</span><span id="sumAllIn">0,00 €</span></div>
-              <div style="height:8px"></div>
-              <div class="pill"><span>Καθαρό</span><span id="sumNet">0,00 €</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      </section>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-tab="entry">➕ Καταχώρηση</button>
-    <button class="tab" data-tab="history">📚 Ιστορικό</button>
-    <button class="tab" data-tab="summary">📊 Σύνολα</button>
-  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="entry">Εγγραφή</button>
+    <button class="tab-btn" data-tab="history">Ιστορικό</button>
+    <button class="tab-btn" data-tab="summary">Στατιστικά</button>
+  </nav>
 
-  <div id="toast" class="toast"></div>
+  <script>
+    // 1. Tab Switching Logic
+    const tabs = document.querySelectorAll('.tab-btn');
+    const views = document.querySelectorAll('.view');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        views.forEach(v => v.classList.remove('active'));
+        
+        tab.classList.add('active');
+        const target = document.getElementById(`view-${tab.dataset.tab}`);
+        if(target) target.classList.add('active');
+      });
+    });
+
+    // 2. Ripple Effect Logic
+    function createRipple(event) {
+      const button = event.currentTarget;
+      const circle = document.createElement("span");
+      const diameter = Math.max(button.clientWidth, button.clientHeight);
+      const radius = diameter / 2;
+
+      circle.style.width = circle.style.height = `${diameter}px`;
+      circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
+      circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
+      circle.classList.add("ripple");
+
+      const ripple = button.getElementsByClassName("ripple")[0];
+      if (ripple) ripple.remove();
+      button.appendChild(circle);
+    }
+
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(b => b.addEventListener('click', createRipple));
+
+    // 3. Basic Calculation Logic
+    const revInput = document.getElementById('revenue');
+    const tipsInput = document.getElementById('tips');
+    const kpiTotal = document.getElementById('kpiTotal');
+
+    function updateKPIs() {
+      const rev = parseFloat(revInput.value) || 0;
+      const tips = parseFloat(tipsInput.value) || 0;
+      kpiTotal.innerText = (rev + tips).toFixed(2) + " €";
+    }
+
+    revInput.addEventListener('input', updateKPIs);
+    tipsInput.addEventListener('input', updateKPIs);
+
+    // Set today's date
+    document.getElementById('dateInput').valueAsDate = new Date();
+  </script>
 </body>
 </html>
