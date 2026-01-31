@@ -5,10 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1020" />
   <title>Taxi Ledger Pro</title>
-  
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
-  
+
+  <script defer src="./db.js"></script>
+  <script defer src="./drive-sync.js"></script>
+  <script defer src="./app.js"></script>
+
   <style>
     :root {
       --bg: #070a14;
@@ -32,7 +36,6 @@
       background: var(--bg); overflow-x: hidden; min-height: 100vh;
     }
 
-    /* Background Layer */
     .bg {
       position: fixed; inset: 0; z-index: -1;
       background: 
@@ -43,93 +46,85 @@
 
     .wrap {
       max-width: 980px; margin: 0 auto;
-      padding: 20px 16px calc(100px + env(safe-area-inset-bottom));
+      padding: 20px 14px calc(100px + env(safe-area-inset-bottom));
     }
 
     /* App Bar */
-    .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 10px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .logo {
       width: 44px; height: 44px; border-radius: 14px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       display: grid; place-items: center; font-weight: 900;
       box-shadow: 0 8px 20px rgba(106,167,255,0.3);
     }
-    .brand h1 { font-size: 20px; margin: 0; }
-    .brand p { font-size: 12px; margin: 0; color: var(--muted); }
+    .brand h1 { font-size: 20px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand p { font-size: 11px; margin: 0; color: var(--muted); }
 
-    .date-input-wrap {
+    .datePill {
       background: var(--card); border: 1px solid var(--stroke);
-      padding: 8px 12px; border-radius: 99px; display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;
     }
     input[type="date"] {
-      background: transparent; border: none; color: var(--text); font-weight: bold; outline: none;
+      background: transparent; border: none; color: var(--text); font-weight: 800; font-size: 13px; outline: none;
     }
 
-    /* Cards & Grid */
-    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
-    @media(min-width: 800px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
+    /* Layout */
+    .grid { display: grid; gap: 14px; }
+    @media(min-width: 780px) { .grid { grid-template-columns: 1.1fr .9fr; align-items: start; } }
 
     .card {
       background: var(--card); border: 1px solid var(--stroke);
       border-radius: var(--r24); overflow: hidden; backdrop-filter: blur(10px);
+      box-shadow: var(--shadow); margin-bottom: 14px;
     }
-    .card-header { padding: 16px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; }
-    .card-body { padding: 16px; }
+    .cardTitle { padding: 14px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--stroke); }
+    .cardInner { padding: 14px; }
+    .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--stroke); padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,0.05); }
 
-    /* Inputs */
-    .field-group { margin-bottom: 16px; }
-    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    /* Inputs & Buttons */
+    .fieldLabel { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 2px 6px; font-weight: 800; }
     .field {
       width: 100%; padding: 14px; border-radius: 16px;
-      background: rgba(0,0,0,0.3); border: 1px solid var(--stroke);
+      background: rgba(0,0,0,0.25); border: 1px solid var(--stroke);
       color: white; font-size: 16px; outline: none; transition: 0.2s;
     }
-    .field:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(106,167,255,0.1); }
-    .field[readonly] { opacity: 0.6; cursor: not-allowed; }
+    .field:focus { border-color: var(--accent); }
+    .field[readonly] { background: rgba(0,0,0,0.1); opacity: 0.7; }
 
-    /* KPIs */
-    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .kpi { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 16px; border: 1px solid var(--stroke); }
-    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
-    .kpi-val { font-size: 18px; font-weight: 900; margin-top: 4px; }
-    .kpi-val.plus { color: #34d399; }
-
-    /* Buttons */
     .btn {
-      width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--stroke);
-      font-weight: 800; cursor: pointer; transition: transform 0.1s;
-      position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; border-radius: 18px; border: 1px solid var(--stroke);
+      font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s;
     }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
-    .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text); }
-    .btn-danger { background: rgba(255,91,122,0.1); color: var(--danger); border-color: rgba(255,91,122,0.2); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
+    .btn.ghost { background: rgba(255,255,255,0.05); color: var(--text); }
+    .btn.danger { background: rgba(255,91,122,0.1); color: var(--danger); border-color: rgba(255,91,122,0.2); }
+    
+    .btnSmall { padding: 10px; font-size: 13px; }
+    .btnRow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 
-    /* Tabs Navigation */
-    .tabs {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(7,10,20,0.8); backdrop-filter: blur(20px);
-      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-      display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100;
-    }
-    .tab-btn {
-      flex: 1; padding: 12px; border-radius: 14px; border: none;
-      background: transparent; color: var(--muted); font-weight: 700;
-      cursor: pointer; transition: 0.3s;
-    }
-    .tab-btn.active { background: rgba(106,167,255,0.15); color: var(--accent); }
+    /* KPI */
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .kpi { background: rgba(0,0,0,0.15); padding: 12px; border-radius: 18px; border: 1px solid var(--stroke); }
+    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .kpi .val { font-size: 19px; font-weight: 900; margin-top: 4px; }
+    .kpi.net .val { color: #34d399; }
 
-    .view { display: none; animation: fadeIn 0.3s ease; }
+    /* Pills & Lists */
+    .pill { border: 1px solid var(--stroke); background: rgba(0,0,0,0.15); border-radius: 99px; padding: 10px 14px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .expense-item { display: grid; grid-template-columns: 1fr 100px 44px; gap: 8px; margin-top: 8px; align-items: center; }
+
+    /* Tabs */
+    .tabs { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,10,20,0.85); backdrop-filter: blur(15px); padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100; }
+    .tab { flex: 1; padding: 12px; border-radius: 16px; border: 1px solid transparent; background: transparent; color: var(--muted); font-weight: 800; cursor: pointer; }
+    .tab.active { background: rgba(106,167,255,0.1); border-color: rgba(106,167,255,0.2); color: var(--accent); }
+
+    .view { display: none; }
     .view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Ripple Effect */
-    .ripple {
-      position: absolute; border-radius: 50%; transform: scale(0);
-      animation: ripple-animation 0.6s linear; background: rgba(255,255,255,0.3);
-    }
-    @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
+    .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 90px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 12px; display: none; z-index: 1000; font-size: 14px; border: 1px solid var(--stroke); }
   </style>
 </head>
 
@@ -142,133 +137,124 @@
         <div class="logo">TL</div>
         <div>
           <h1>Taxi Ledger</h1>
-          <p>Smart Fleet Management</p>
+          <p>Τζίρος • Έξοδα • Backup</p>
         </div>
       </div>
-      <div class="date-input-wrap">
+      <div class="datePill">
         <span>📅</span>
-        <input type="date" id="dateInput">
+        <input id="dateInput" type="date">
       </div>
     </header>
 
     <div class="grid">
-      <section id="view-entry" class="view active">
+      <main id="view-entry" class="view active">
         <div class="card">
-          <div class="card-header">
-            <span style="font-weight: 800;">Νέα Καταχώρηση</span>
-            <small id="saveStatus" style="color: var(--muted);">Αναμονή...</small>
+          <div class="cardTitle">
+            <span style="font-weight: 900;">Καταχώρηση</span>
+            <div class="badge">Auto-save: <span id="autosaveState">έτοιμο</span></div>
           </div>
-          <div class="card-body">
-            <div class="kpi-grid">
-              <div class="kpi">
-                <div class="kpi-label">Σύνολο (€)</div>
-                <div id="kpiTotal" class="kpi-val">0.00</div>
+
+          <div class="cardInner">
+            <div class="kpis">
+              <div class="kpi"><div class="label">Τζίρος</div><div id="kpiRevenue" class="val">0,00 €</div></div>
+              <div class="kpi"><div class="label">Extras</div><div id="kpiExtras" class="val">0,00 €</div></div>
+              <div class="kpi"><div class="label">Σύνολο</div><div id="kpiTotal" class="val">0,00 €</div></div>
+              <div class="kpi net"><div class="label">Καθαρά</div><div id="kpiNet" class="val">0,00 €</div></div>
+            </div>
+
+            <label class="fieldLabel">Τζίρος (€)</label>
+            <input id="revenue" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
+
+            <label class="fieldLabel">Μπουρμπουάρ (€)</label>
+            <input id="tip1" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
+
+            <label class="fieldLabel">Άλλα (€)</label>
+            <input id="tip2" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
+
+            <label class="fieldLabel">Σύνολο Εξόδων (€)</label>
+            <input id="expensesTotal" class="field" type="number" step="0.01" value="0.00" readonly>
+
+            <button id="addExpenseBtn" class="btn ghost btnSmall" style="margin-top: 12px;">+ Προσθήκη Εξόδου</button>
+            <div id="expensesList"></div>
+
+            <label class="fieldLabel">Σημειώσεις</label>
+            <input id="note" class="field" placeholder="...">
+
+            <button id="saveBtn" class="btn primary" style="margin-top: 20px;">💾 Αποθήκευση</button>
+
+            <div class="card" style="margin-top: 24px; background: rgba(0,0,0,0.2);">
+              <div class="cardTitle" style="font-size: 13px;">Cloud Sync (Google)</div>
+              <div class="cardInner">
+                <div id="syncState" class="pill" style="margin-bottom: 10px; font-size: 11px;">
+                  🔴 Offline • 🔓 Google: Όχι
+                </div>
+                <label class="pill" style="cursor:pointer; margin-bottom:10px">
+                  <span>Auto-sync</span>
+                  <input id="syncToggle" type="checkbox">
+                </label>
+                <div class="btnRow">
+                  <button id="syncLoginBtn" class="btn ghost btnSmall">Σύνδεση</button>
+                  <button id="syncBtn" class="btn ghost btnSmall">Sync Τώρα</button>
+                </div>
+                <button id="restoreBtn" class="btn danger btnSmall" style="margin-top:10px; width:100%">Επαναφορά από Cloud</button>
               </div>
-              <div class="kpi">
-                <div class="kpi-label">Καθαρά (€)</div>
-                <div id="kpiNet" class="kpi-val plus">0.00</div>
-              </div>
             </div>
-
-            <div class="field-group">
-              <label for="revenue">Τζίρος Ταξιμέτρου</label>
-              <input type="number" id="revenue" class="field" inputmode="decimal" placeholder="0.00">
-            </div>
-
-            <div class="field-group">
-              <label for="tips">Μπουρμπουάρ & Extras</label>
-              <input type="number" id="tips" class="field" inputmode="decimal" placeholder="0.00">
-            </div>
-
-            <div class="field-group">
-              <label>Έξοδα Ημέρας</label>
-              <input type="number" id="expensesTotal" class="field" readonly value="0.00">
-              <button id="addExpenseBtn" class="btn btn-ghost" style="margin-top: 10px; padding: 10px; font-size: 13px;">
-                + Προσθήκη Εξόδου
-              </button>
-            </div>
-
-            <div id="expenseItems"></div>
-
-            <div class="field-group">
-              <label for="notes">Σημειώσεις</label>
-              <textarea id="notes" class="field" rows="2" placeholder="π.χ. Βροχερή μέρα, κίνηση στην Κηφισίας..."></textarea>
-            </div>
-
-            <button id="saveBtn" class="btn btn-primary">💾 Αποθήκευση Δεδομένων</button>
           </div>
         </div>
-      </section>
+      </main>
 
-      <section id="view-history" class="view">
-        <div class="card">
-          <div class="card-header"><span style="font-weight: 800;">Ιστορικό</span></div>
-          <div class="card-body" id="historyList">
-            <p style="text-align: center; color: var(--muted);">Δεν υπάρχουν δεδομένα.</p>
+      <aside>
+        <div id="view-history" class="view">
+          <div class="card">
+            <div class="cardTitle"><span style="font-weight: 800;">Ιστορικό</span></div>
+            <div class="cardInner" id="historyList"></div>
           </div>
         </div>
-      </section>
+
+        <div id="view-summary" class="view">
+          <div class="card">
+            <div class="cardTitle"><span style="font-weight: 800;">Σύνολα</span></div>
+            <div class="cardInner" id="summaryStats">
+               </div>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="entry">Εγγραφή</button>
-    <button class="tab-btn" data-tab="history">Ιστορικό</button>
-    <button class="tab-btn" data-tab="summary">Στατιστικά</button>
+    <button class="tab active" data-tab="entry">Εγγραφή</button>
+    <button class="tab" data-tab="history">Ιστορικό</button>
+    <button class="tab" data-tab="summary">Στατιστικά</button>
   </nav>
 
-  <script>
-    // 1. Tab Switching Logic
-    const tabs = document.querySelectorAll('.tab-btn');
-    const views = document.querySelectorAll('.view');
+  <div id="toast" class="toast"></div>
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
+  <script>
+    // Tab Logic
+    const tabs = document.querySelectorAll('.tab');
+    const views = document.querySelectorAll('.view');
+    tabs.forEach(t => {
+      t.addEventListener('click', () => {
+        tabs.forEach(btn => btn.classList.remove('active'));
         views.forEach(v => v.classList.remove('active'));
-        
-        tab.classList.add('active');
-        const target = document.getElementById(`view-${tab.dataset.tab}`);
-        if(target) target.classList.add('active');
+        t.classList.add('active');
+        document.getElementById('view-' + t.dataset.tab).classList.add('active');
       });
     });
 
-    // 2. Ripple Effect Logic
-    function createRipple(event) {
-      const button = event.currentTarget;
-      const circle = document.createElement("span");
-      const diameter = Math.max(button.clientWidth, button.clientHeight);
-      const radius = diameter / 2;
-
-      circle.style.width = circle.style.height = `${diameter}px`;
-      circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
-      circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
-      circle.classList.add("ripple");
-
-      const ripple = button.getElementsByClassName("ripple")[0];
-      if (ripple) ripple.remove();
-      button.appendChild(circle);
-    }
-
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(b => b.addEventListener('click', createRipple));
-
-    // 3. Basic Calculation Logic
-    const revInput = document.getElementById('revenue');
-    const tipsInput = document.getElementById('tips');
-    const kpiTotal = document.getElementById('kpiTotal');
-
-    function updateKPIs() {
-      const rev = parseFloat(revInput.value) || 0;
-      const tips = parseFloat(tipsInput.value) || 0;
-      kpiTotal.innerText = (rev + tips).toFixed(2) + " €";
-    }
-
-    revInput.addEventListener('input', updateKPIs);
-    tipsInput.addEventListener('input', updateKPIs);
-
-    // Set today's date
-    document.getElementById('dateInput').valueAsDate = new Date();
+    // Ripple Effect
+    document.querySelectorAll('.btn').forEach(button => {
+      button.addEventListener('click', function(e) {
+        let x = e.clientX - e.target.offsetLeft;
+        let y = e.clientY - e.target.offsetTop;
+        let ripple = document.createElement('span');
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+      });
+    });
   </script>
 </body>
 </html>
