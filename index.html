@@ -4,8 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1020" />
+  
   <title>Taxi Ledger Pro</title>
   <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Taxi Ledger">
+  <meta name="mobile-web-app-capable" content="yes">
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
@@ -19,56 +24,65 @@
       --r20: 20px; --r24: 24px; --shadow: 0 18px 50px rgba(0,0,0,.45);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; color: var(--text); font-family: system-ui, -apple-system, sans-serif; background: var(--bg); overflow-x: hidden; }
+    body { 
+      margin: 0; color: var(--text); font-family: system-ui, -apple-system, sans-serif; 
+      background: var(--bg); overflow-x: hidden; 
+    }
     .bg { position: fixed; inset: 0; z-index: -2; background: radial-gradient(1200px 700px at 18% -12%, rgba(106,167,255,.2), transparent 60%), linear-gradient(180deg, #050712 0%, #070a14 100%); }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 18px 14px calc(92px + env(safe-area-inset-bottom)); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 18px 14px calc(95px + env(safe-area-inset-bottom)); }
     
-    /* UI Components */
+    /* Header & Tools */
     .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .logo { width: 44px; height: 44px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-weight: 900; }
+    .logo { width: 44px; height: 44px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-weight: 900; box-shadow: 0 8px 20px rgba(106,167,255,0.3); }
     .datePill { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 99px; background: var(--card); border: 1px solid var(--stroke); }
-    input[type="date"] { background: transparent; border: none; color: white; font-weight: 800; outline: none; }
+    input[type="date"] { background: transparent; border: none; color: white; font-weight: 800; outline: none; font-size: 14px; }
     
     .grid { display: grid; gap: 12px; }
     @media(min-width: 780px) { .grid { grid-template-columns: 1.1fr .9fr; align-items: start; } }
     
-    .card { background: var(--card); border: 1px solid var(--stroke); border-radius: var(--r24); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 12px; }
+    .card { background: var(--card); border: 1px solid var(--stroke); border-radius: var(--r24); overflow: hidden; backdrop-filter: blur(15px); box-shadow: var(--shadow); margin-bottom: 12px; }
     .cardTitle { padding: 14px; background: rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--stroke); font-weight: 800; }
     .cardInner { padding: 14px; }
-    .badge { font-size: 11px; color: var(--muted); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--stroke); }
+    .badge { font-size: 11px; color: var(--muted); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--stroke); background: rgba(255,255,255,0.03); }
     
     /* KPIs */
     .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .kpi { background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--r20); border: 1px solid var(--stroke); }
-    .kpi .label { font-size: 11px; color: var(--muted); }
-    .kpi .val { font-size: 18px; font-weight: 900; margin-top: 4px; }
+    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi .val { font-size: 19px; font-weight: 900; margin-top: 4px; }
     .kpi.net .val { color: var(--ok); }
 
     /* Forms */
     .fieldLabel { font-size: 12px; color: var(--muted); font-weight: 800; margin: 12px 2px 6px; display: block; }
-    .field { width: 100%; padding: 14px; border-radius: 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--stroke); color: white; outline: none; font-size: 16px; }
-    .btn { width: 100%; padding: 14px; border-radius: 18px; border: 1px solid var(--stroke); font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .field { width: 100%; padding: 14px; border-radius: 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--stroke); color: white; outline: none; font-size: 16px; transition: border-color 0.2s; }
+    .field:focus { border-color: var(--accent); }
+    
+    .btn { width: 100%; padding: 15px; border-radius: 18px; border: 1px solid var(--stroke); font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
     .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; }
     .btn.ghost { background: rgba(255,255,255,0.05); color: white; }
-    .btn.danger { background: rgba(255,91,122,0.1); color: var(--danger); }
-    .miniBtn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--danger); background: rgba(255,91,122,0.1); cursor: pointer; }
+    .btn.danger { background: rgba(255,91,122,0.1); color: var(--danger); border-color: rgba(255,91,122,0.2); }
     
-    .expense-item { display: grid; grid-template-columns: 1fr 80px 44px; gap: 8px; margin-bottom: 8px; }
-    .pill { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; border: 1px solid var(--stroke); display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    /* Expense Items Styling */
+    .expense-item { display: grid; grid-template-columns: 1fr 90px 44px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .miniBtn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--danger); background: rgba(255,91,122,0.15); color: var(--danger); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-    /* History Items */
-    .historyItem { padding: 12px; border: 1px solid var(--stroke); border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; background: rgba(255,255,255,0.03); }
-    .historyMeta { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .historyNet { font-weight: 900; color: var(--ok); }
+    /* History & Lists */
+    .historyItem { padding: 14px; border: 1px solid var(--stroke); border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; background: rgba(255,255,255,0.03); }
+    .historyMeta { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+    .historyNet { font-weight: 900; color: var(--ok); font-size: 16px; }
+    .pill { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 14px; border: 1px solid var(--stroke); display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
 
-    /* Navigation */
-    .tabs { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,10,20,0.8); backdrop-filter: blur(20px); padding: 12px; display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100; }
-    .tab { flex: 1; padding: 12px; border-radius: 14px; border: none; background: transparent; color: var(--muted); font-weight: 800; cursor: pointer; }
-    .tab.active { background: rgba(106,167,255,0.1); color: var(--accent); }
+    /* Navigation Tabs */
+    .tabs { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(7,10,20,0.85); backdrop-filter: blur(25px); padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 8px; border-top: 1px solid var(--stroke); z-index: 100; }
+    .tab { flex: 1; padding: 12px; border-radius: 16px; border: none; background: transparent; color: var(--muted); font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .tab.active { background: rgba(106,167,255,0.12); color: var(--accent); }
     
     .view { display: none; }
-    .view.active { display: block; }
-    .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 90px; background: #000; padding: 10px 20px; border-radius: 12px; border: 1px solid var(--stroke); display: none; z-index: 1000; }
+    .view.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+    .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 100px; background: rgba(0,0,0,0.9); color: white; padding: 12px 24px; border-radius: 14px; border: 1px solid var(--stroke); display: none; z-index: 2000; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); }
   </style>
 </head>
 
@@ -77,14 +91,20 @@
   <div class="wrap">
     
     <header class="appbar">
-      <div class="logo">TL</div>
-      <div class="datePill">📅 <input id="dateInput" type="date"></div>
+      <div class="logo" title="Taxi Ledger Pro">TL</div>
+      <div class="datePill">
+        <span>📅</span>
+        <input id="dateInput" type="date">
+      </div>
     </header>
 
     <div class="grid">
       <main id="view-entry" class="view active">
         <div class="card">
-          <div class="cardTitle">Καταχώρηση <span class="badge" id="autosaveState">έτοιμο</span></div>
+          <div class="cardTitle">
+            Νέα Καταχώρηση 
+            <span class="badge" id="autosaveState">έτοιμο</span>
+          </div>
           <div class="cardInner">
             <div class="kpis">
               <div class="kpi"><div class="label">Τζίρος</div><div id="kpiRevenue" class="val">0,00 €</div></div>
@@ -93,37 +113,39 @@
               <div class="kpi net"><div class="label">Καθαρά</div><div id="kpiNet" class="val">0,00 €</div></div>
             </div>
 
-            <label class="fieldLabel">Τζίρος (€)</label>
-            <input id="revenue" class="field" inputmode="decimal" type="number" step="0.01">
+            <label class="fieldLabel">Τζίρος Ταξιμέτρου (€)</label>
+            <input id="revenue" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
+            
             <label class="fieldLabel">Μπουρμπουάρ (€)</label>
-            <input id="tip1" class="field" inputmode="decimal" type="number" step="0.01">
-            <label class="fieldLabel">Άλλα (€)</label>
-            <input id="tip2" class="field" inputmode="decimal" type="number" step="0.01">
+            <input id="tip1" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
+            
+            <label class="fieldLabel">Άλλα Έσοδα / Extras (€)</label>
+            <input id="tip2" class="field" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
             
             <label class="fieldLabel">Σύνολο Εξόδων (€)</label>
             <input id="expensesTotal" class="field" readonly value="0.00">
             
-            <button id="addExpenseBtn" class="btn ghost" style="margin-top:12px">+ Προσθήκη Εξόδου</button>
+            <button id="addExpenseBtn" class="btn ghost" style="margin-top:14px">➕ Προσθήκη Εξόδου</button>
             <div id="expensesList" style="margin-top:12px"></div>
 
-            <label class="fieldLabel">Σημειώσεις</label>
-            <textarea id="note" class="field" rows="2"></textarea>
+            <label class="fieldLabel">Σημειώσεις Ημέρας</label>
+            <textarea id="note" class="field" rows="2" placeholder="π.χ. Βροχή, κίνηση..."></textarea>
 
-            <button id="saveBtn" class="btn primary" style="margin-top:20px">💾 Αποθήκευση</button>
+            <button id="saveBtn" class="btn primary" style="margin-top:24px">💾 Οριστική Αποθήκευση</button>
 
-            <div class="card" style="margin-top:24px; background: rgba(0,0,0,0.2);">
-              <div class="cardTitle" style="font-size:13px">Google Drive Sync</div>
+            <div class="card" style="margin-top:28px; background: rgba(0,0,0,0.25);">
+              <div class="cardTitle" style="font-size:13px">☁️ Cloud Sync (Google Drive)</div>
               <div class="cardInner">
-                <div id="syncState" class="pill" style="font-size:11px">🔴 Offline</div>
+                <div id="syncState" class="pill" style="font-size:11px; color: var(--muted);">🔴 Offline • 🔓 Google: όχι</div>
                 <label class="pill" style="cursor:pointer">
-                  <span>Auto-sync</span>
+                  <span>Αυτόματος Συγχρονισμός</span>
                   <input id="syncToggle" type="checkbox">
                 </label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px">
-                  <button id="syncLoginBtn" class="btn ghost" style="font-size:12px">Σύνδεση</button>
-                  <button id="syncBtn" class="btn ghost" style="font-size:12px">Sync Τώρα</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px">
+                  <button id="syncLoginBtn" class="btn ghost" style="font-size:12px; padding:10px">Σύνδεση</button>
+                  <button id="syncBtn" class="btn ghost" style="font-size:12px; padding:10px">Sync Τώρα</button>
                 </div>
-                <button id="restoreBtn" class="btn danger" style="margin-top:8px; width:100%; font-size:12px">Επαναφορά (Restore)</button>
+                <button id="restoreBtn" class="btn danger" style="margin-top:10px; width:100%; font-size:12px; padding:10px">Επαναφορά από Cloud</button>
               </div>
             </div>
           </div>
@@ -132,22 +154,27 @@
 
       <section id="view-history" class="view">
         <div class="card">
-          <div class="cardTitle">Ιστορικό</div>
-          <div class="cardInner" id="historyList"></div>
+          <div class="cardTitle">📜 Ιστορικό Καταχωρήσεων</div>
+          <div class="cardInner" id="historyList">
+            </div>
         </div>
       </section>
 
       <section id="view-summary" class="view">
         <div class="card">
-          <div class="cardTitle">Σύνολα</div>
+          <div class="cardTitle">📊 Συνολικά Στατιστικά</div>
           <div class="cardInner">
-            <div class="pill"><span>Ημέρες</span> <span id="sumDays">0</span></div>
-            <div class="pill"><span>Τζίρος</span> <span id="sumRevenue">0,00 €</span></div>
+            <div class="pill"><span>Σύνολο Ημερών</span> <span id="sumDays" style="font-weight:900">0</span></div>
+            <div class="pill"><span>Συνολικός Τζίρος</span> <span id="sumRevenue" style="font-weight:900">0,00 €</span></div>
             <div class="pill"><span>Μπουρμπουάρ</span> <span id="sumTip1">0,00 €</span></div>
-            <div class="pill"><span>Άλλα</span> <span id="sumTip2">0,00 €</span></div>
-            <div class="pill"><span>Έξοδα</span> <span id="sumExpenses">0,00 €</span></div>
-            <div class="pill" style="border-color:var(--accent)"><span>Όλα μαζί</span> <span id="sumAllIn">0,00 €</span></div>
-            <div class="pill" style="background:var(--ok); color:#000"><span>ΚΑΘΑΡΟ ΚΕΡΔΟΣ</span> <span id="sumNet">0,00 €</span></div>
+            <div class="pill"><span>Άλλα Έσοδα</span> <span id="sumTip2">0,00 €</span></div>
+            <div class="pill"><span>Συνολικά Έξοδα</span> <span id="sumExpenses" style="color:var(--danger)">0,00 €</span></div>
+            <hr style="border:none; border-top: 1px solid var(--stroke); margin: 12px 0;">
+            <div class="pill" style="border-color:var(--accent)"><span>Ακαθάριστα (Gross)</span> <span id="sumAllIn" style="font-weight:900">0,00 €</span></div>
+            <div class="pill" style="background:var(--ok); color:#000; border:none; margin-top:10px">
+              <span style="font-weight:800">ΚΑΘΑΡΟ ΚΕΡΔΟΣ</span> 
+              <span id="sumNet" style="font-weight:900; font-size:18px">0,00 €</span>
+            </div>
           </div>
         </div>
       </section>
