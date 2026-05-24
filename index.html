@@ -402,7 +402,9 @@
 
         // --- KEYBOARD MANAGEMENT SYSTEM ---
         function initKeyboardEngine() {
+            const formInputs = Array.from(document.querySelectorAll('#shiftForm input, #shiftForm select'));
             const allInputs = document.querySelectorAll('input, select, textarea');
+            
             allInputs.forEach(input => {
                 input.addEventListener('focus', () => {
                     bottomNav.classList.add('nav-hidden');
@@ -414,6 +416,34 @@
                 input.addEventListener('blur', () => {
                     bottomNav.classList.remove('nav-hidden');
                 });
+            });
+
+            // Μηχανισμός πρόληψης πρόωρου Submit με το Enter στα iPhone
+            document.getElementById('shiftForm').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    // Αν ο χρήστης βρίσκεται στις Σημειώσεις ή στο κουμπί αποθήκευσης, επιτρέπουμε τη φυσική λειτουργία
+                    if (e.target.id === 'notes' || e.target.type === 'submit') {
+                        return;
+                    }
+                    
+                    // Αλλιώς, εμποδίζουμε την υποβολή της φόρμας
+                    e.preventDefault();
+                    
+                    // Βρίσκουμε το επόμενο ορατό πεδίο για να μεταφέρουμε τον κέρσορα
+                    const currentIndex = formInputs.indexOf(e.target);
+                    if (currentIndex > -1 && currentIndex < formInputs.length - 1) {
+                        let nextInput = formInputs[currentIndex + 1];
+                        
+                        // Προσπέραση κρυφών πεδίων αν υπάρχουν
+                        if (nextInput && nextInput.type === 'hidden') {
+                            nextInput = formInputs[currentIndex + 2];
+                        }
+                        
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+                    }
+                }
             });
         }
 
@@ -480,8 +510,6 @@
         });
 
         // --- LIVE MATH ENGINE ---
-        // Αφαιρέθηκε η calculateAutomaticCash. Το πεδίο μετρητά πλέον είναι πλήρως ανεξάρτητο και συμπληρώνεται από τον οδηγό.
-
         document.getElementById('kmStart').addEventListener('input', calculateLiveKm);
         document.getElementById('kmEnd').addEventListener('input', calculateLiveKm);
         function calculateLiveKm() {
@@ -500,7 +528,7 @@
             showHistoryBtn.classList.remove('active');
             
             if(tab === 'home') { homeTab.classList.remove('hidden'); showHomeBtn.classList.add('active'); }
-            else if(tab === 'history') { historyTab.classList.remove('hidden'); showHistoryBtn.github.add('active'); historyTab.classList.remove('hidden'); showHistoryBtn.classList.add('active'); }
+            else if(tab === 'history') { historyTab.classList.remove('hidden'); showHistoryBtn.classList.add('active'); }
             else if(tab === 'form') { formTab.classList.remove('hidden'); }
         }
 
@@ -573,7 +601,6 @@
             };
 
             shiftData.totalKm = shiftData.kmEnd - shiftData.kmStart;
-            // Οι συνολικές εισπράξεις παραμένουν το άθροισμα όλων των μεθόδων πληρωμής που εισάγεις (Μετρητά + POS + FreeNow + Uber)
             shiftData.synolikesEispraxeis = shiftData.metrita + shiftData.kartes + shiftData.freenow + shiftData.uber;
             shiftData.totalExpenses = shiftData.kausima + shiftData.service + shiftData.plysimo + shiftData.allaExoda;
             shiftData.katharoKerdos = (shiftData.synolikesEispraxeis + shiftData.tips) - shiftData.totalExpenses;
